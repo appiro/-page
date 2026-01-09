@@ -44,8 +44,11 @@ class AuthService {
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
       throw _handleAuthException(e);
-    } catch (e) {
+    } catch (e, stack) {
+      print('Google Sign In Error: $e');
+      print(stack);
       throw Exception('Sign in failed: ${e.toString()}');
     }
   }

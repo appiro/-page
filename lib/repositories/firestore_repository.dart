@@ -185,6 +185,11 @@ class FirestoreRepository implements FitRepository {
   }
 
   @override
+  Future<List<Workout>> getAllWorkouts(String uid) async {
+    return []; // Not optimized for Firestore
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getLastRecordForExercise(
     String uid,
     String exerciseId,
@@ -498,6 +503,11 @@ class FirestoreRepository implements FitRepository {
     } catch (e) {
       throw Exception('Failed to get body composition history: ${e.toString()}');
     }
+  }
+
+  @override
+  Future<List<BodyCompositionEntry>> getAllBodyCompositionEntries(String uid) async {
+    return [];
   }
 
   @override

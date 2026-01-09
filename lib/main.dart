@@ -71,6 +71,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<AuthProvider>(
           create: (context) => AuthProvider(
             context.read<AuthService>(),
+            localDatabase: context.read<LocalDatabase>(),
           ),
         ),
       ],

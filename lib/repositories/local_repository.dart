@@ -338,6 +338,12 @@ class LocalRepository implements FitRepository {
   }
 
   @override
+  Future<List<Workout>> getAllWorkouts(String uid) async {
+    final entities = await (_db.select(_db.workouts)).get();
+    return await Future.wait(entities.map((e) => _getDetailedWorkout(e)));
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getLastRecordForExercise(String uid, String exerciseId, String beforeDateKey) async {
     // Join Workouts and WorkoutItems to find optimal previous record efficiently
     final query = _db.select(_db.workoutItems).join([
@@ -647,6 +653,23 @@ class LocalRepository implements FitRepository {
       ..orderBy([(t) => OrderingTerm(expression: t.dateKey, mode: OrderingMode.asc)])
     ).get();
 
+    return entities.map((e) => BodyCompositionEntry(
+      id: e.id,
+      dateKey: e.dateKey,
+      timestamp: e.timestamp,
+      weight: e.weight,
+      bodyFatPercentage: e.bodyFatPercentage,
+      muscleMass: e.muscleMass,
+      note: e.note,
+      source: e.source,
+      createdAt: e.createdAt ?? DateTime.now(),
+      updatedAt: e.updatedAt ?? DateTime.now(),
+    )).toList();
+  }
+
+  @override
+  Future<List<BodyCompositionEntry>> getAllBodyCompositionEntries(String uid) async {
+    final entities = await (_db.select(_db.localBodyCompositionEntries)).get();
     return entities.map((e) => BodyCompositionEntry(
       id: e.id,
       dateKey: e.dateKey,

@@ -21,6 +21,7 @@ abstract class FitRepository {
   Future<List<Workout>> getWorkoutsForWeek(String uid, List<String> dateKeys);
   Future<List<String>> getDistinctWorkoutTitles(String uid);
   Future<List<Workout>> searchWorkoutsByTitle(String uid, String titleQuery);
+  Future<List<Workout>> getAllWorkouts(String uid); // For Data Migration
   Future<List<Map<String, dynamic>>> getLastRecordForExercise(String uid, String exerciseId, String beforeDateKey);
   Future<List<Map<String, dynamic>>> getExerciseHistory(String uid, String exerciseId);
 
@@ -46,5 +47,6 @@ abstract class FitRepository {
   Future<void> deleteBodyCompositionEntry(String uid, String entryId);
   Future<BodyCompositionEntry?> getBodyCompositionByDate(String uid, String dateKey);
   Future<List<BodyCompositionEntry>> getBodyCompositionHistory(String uid, DateTime startDate, DateTime endDate);
+  Future<List<BodyCompositionEntry>> getAllBodyCompositionEntries(String uid); // For Data Migration
   Stream<List<BodyCompositionEntry>> getBodyCompositionStream(String uid);
 }
