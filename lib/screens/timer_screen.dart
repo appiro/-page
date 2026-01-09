@@ -97,14 +97,17 @@ class _TimerScreenState extends State<TimerScreen> {
     if (mounted) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
+          builder: (dialogContext) => AlertDialog(
           title: const Text('タイマー終了！'),
           content: const Text('インターバルが終了しました'),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop(); // Close dialog
                 _resetTimer();
+                if (mounted) {
+                  Navigator.of(context).pop(); // Close screen (return to editor)
+                }
               },
               child: const Text('OK'),
             ),

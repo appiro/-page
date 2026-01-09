@@ -313,6 +313,31 @@ class LocalRepository implements FitRepository {
   }
 
   @override
+  Future<List<String>> getDistinctWorkoutTitles(String uid) async {
+    final query = _db.selectOnly(_db.workouts, distinct: true)
+      ..addColumns([_db.workouts.title])
+      ..where(_db.workouts.title.isNotNull() & _db.workouts.title.equals('').not());
+      
+    final results = await query.get();
+    return results.map((row) => row.read(_db.workouts.title)!).toList();
+  }
+
+  @override
+  Future<List<Workout>> searchWorkoutsByTitle(String uid, String titleQuery) async {
+    final query = _db.select(_db.workouts)
+      ..where((t) => t.title.like('%$titleQuery%'))
+      ..orderBy([(t) => OrderingTerm(expression: t.workoutDateKey, mode: OrderingMode.desc)]);
+      
+    final entities = await query.get();
+    
+    final workouts = <Workout>[];
+    for (final entity in entities) {
+        workouts.add(await _getDetailedWorkout(entity));
+    }
+    return workouts;
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getLastRecordForExercise(String uid, String exerciseId, String beforeDateKey) async {
     // Join Workouts and WorkoutItems to find optimal previous record efficiently
     final query = _db.select(_db.workoutItems).join([

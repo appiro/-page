@@ -350,6 +350,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final goal = economyProvider.userProfile?.weeklyGoal ?? 3;
         final achieved = count >= goal;
         final progress = goal > 0 ? count / goal : 0.0;
+        
+        // Calculate date range
+        final weekStartsOn = economyProvider.userProfile?.weekStartsOn ?? 'mon';
+        final now = DateTime.now();
+        final start = DateHelper.getWeekStart(now, weekStartsOn);
+        final end = DateHelper.getWeekEnd(start);
+        final rangeText = '${DateHelper.formatDateWithDay(start)} 〜 ${DateHelper.formatDateWithDay(end)}';
 
         return Card(
           elevation: 2,
@@ -358,6 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: InkWell(
             onTap: () => _showWeeklyGoalPicker(context, economyProvider, goal),
+            onLongPress: () => _showWeeklyGoalPicker(context, economyProvider, goal, force: true),
             borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
             child: Padding(
               padding: const EdgeInsets.all(AppConstants.defaultPadding * 1.5),
@@ -366,17 +374,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              Text(
+                                '週目標',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.edit, size: 16, color: Colors.grey[600]),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
                           Text(
-                            '週目標',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                            rangeText,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                  fontSize: 11,
                                 ),
                           ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.edit, size: 16, color: Colors.grey[600]),
                         ],
                       ),
                       if (achieved)
@@ -448,10 +470,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showWeeklyGoalPicker(BuildContext context, EconomyProvider provider, int currentGoal) {
+  void _showWeeklyGoalPicker(BuildContext context, EconomyProvider provider, int currentGoal, {bool force = false}) {
     // Check if update is allowed
     final profile = provider.userProfile;
-    if (profile != null) {
+    if (profile != null && !force) {
       final now = DateTime.now();
       final weekStart = DateHelper.getWeekStart(now, profile.weekStartsOn);
       final updatedAt = profile.weeklyGoalUpdatedAt;
@@ -460,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // ただし、厳密には「今週に入ってから変更したか」を見る
       // updatedAt >= weekStart
       if (updatedAt != null && !updatedAt.isBefore(weekStart)) {
-         _showThrottledSnackBar('週目標は週に1回までしか変更できません。', isError: true);
+         _showThrottledSnackBar('週目標は週に1回までしか変更できません。\n(長押しでリセット可能)', isError: true);
         return;
       }
     }
@@ -490,13 +512,41 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const Text('目標回数を選択', style: TextStyle(fontWeight: FontWeight.bold)),
                     TextButton(
-                      onPressed: () {
-                        provider.updateSettings({
-                          'weeklyGoal': selectedGoal,
-                          'weeklyGoalUpdatedAt': DateTime.now(), // 更新日時を記録
-                        });
-                        Navigator.pop(context);
-                        _showThrottledSnackBar('週目標を $selectedGoal 回に設定しました');
+                      onPressed: () async {
+                        void doUpdate() {
+                            provider.updateSettings({
+                              'weeklyGoal': selectedGoal,
+                              'weeklyGoalUpdatedAt': DateTime.now(),
+                            });
+                            Navigator.pop(context);
+                            _showThrottledSnackBar('週目標を $selectedGoal 回に設定しました');
+                        }
+
+                        if (force) {
+                           final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                 title: const Text('目標のリセット'),
+                                 content: const Text('今週の目標をリセットして、目標を再設定しますか？'),
+                                 actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('キャンセル'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                      child: const Text('リセット'),
+                                    ),
+                                 ],
+                              ),
+                           );
+                           if (confirm == true) {
+                              doUpdate();
+                           }
+                        } else {
+                           doUpdate();
+                        }
                       },
                       child: const Text('保存', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),

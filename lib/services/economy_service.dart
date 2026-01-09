@@ -38,6 +38,32 @@ class EconomyService {
     }
   }
 
+  // Deduct coins from user
+  Future<void> deductCoins(String uid, int amount) async {
+    try {
+      final economyState = await _repository.getEconomyState(uid);
+      final currentCoins = economyState.totalCoins;
+      // Ensure not below 0
+      final newCoins = (currentCoins - amount) < 0 ? 0 : (currentCoins - amount);
+      
+      // Also reduce lifetime to prevent farming
+      final currentLifetime = economyState.getAchievementCount(AppConstants.achievementTotalCoins);
+      final newLifetime = (currentLifetime - amount) < 0 ? 0 : (currentLifetime - amount);
+
+      final newState = economyState.copyWith(
+        totalCoins: newCoins,
+        achievementCounts: {
+          ...economyState.achievementCounts,
+          AppConstants.achievementTotalCoins: newLifetime,
+        },
+      );
+      
+      await _repository.updateEconomyState(uid, newState);
+    } catch (e) {
+      throw Exception('Failed to deduct coins: ${e.toString()}');
+    }
+  }
+
   // Purchase an item from the shop
   Future<bool> purchaseItem(String uid, String itemId) async {
     try {

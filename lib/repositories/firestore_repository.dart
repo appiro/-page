@@ -174,6 +174,17 @@ class FirestoreRepository implements FitRepository {
   }
 
   @override
+  Future<List<String>> getDistinctWorkoutTitles(String uid) async {
+    // Firestore implementation stub
+    return []; 
+  }
+
+  @override
+  Future<List<Workout>> searchWorkoutsByTitle(String uid, String titleQuery) async {
+    return [];
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getLastRecordForExercise(
     String uid,
     String exerciseId,

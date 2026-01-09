@@ -19,6 +19,8 @@ abstract class FitRepository {
   Stream<List<Workout>> getWorkoutsStream(String uid);
   Future<List<Workout>> getWorkoutsByDateRange(String uid, DateTime startDate, DateTime endDate);
   Future<List<Workout>> getWorkoutsForWeek(String uid, List<String> dateKeys);
+  Future<List<String>> getDistinctWorkoutTitles(String uid);
+  Future<List<Workout>> searchWorkoutsByTitle(String uid, String titleQuery);
   Future<List<Map<String, dynamic>>> getLastRecordForExercise(String uid, String exerciseId, String beforeDateKey);
   Future<List<Map<String, dynamic>>> getExerciseHistory(String uid, String exerciseId);
 

@@ -220,6 +220,22 @@ class WorkoutProvider with ChangeNotifier {
   // Delete workout
   Future<void> deleteWorkout(String workoutId) async {
     try {
+      // Check if we need to deduct coins
+      // Try to find in local list first, otherwise fetch from repo
+      Workout? workout;
+      try {
+        workout = _workouts.firstWhere((w) => w.id == workoutId);
+      } catch (_) {
+        workout = await _repository.getWorkout(uid, workoutId);
+      }
+
+      if (workout != null && workout.coinGranted) {
+        final coins = _economyService.calculateCoins(workout);
+        if (coins > 0) {
+          await _economyService.deductCoins(uid, coins);
+        }
+      }
+
       await _repository.deleteWorkout(uid, workoutId);
       if (_currentWorkout?.id == workoutId) {
         _currentWorkout = null;
@@ -246,6 +262,16 @@ class WorkoutProvider with ChangeNotifier {
     } catch (e) {
       return [];
     }
+  }
+
+  // Get previous workout titles
+  Future<List<String>> getPreviousTitles() async {
+    return await _repository.getDistinctWorkoutTitles(uid);
+  }
+
+  // Search workouts by title
+  Future<List<Workout>> searchWorkouts(String query) async {
+    return await _repository.searchWorkoutsByTitle(uid, query);
   }
 
   // Get workouts in date range (for calendar)

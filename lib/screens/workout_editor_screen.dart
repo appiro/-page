@@ -11,6 +11,7 @@ import '../widgets/exercise_card.dart';
 import '../screens/exercise_picker_screen.dart';
 import '../utils/date_helper.dart';
 import '../utils/constants.dart';
+import 'timer_screen.dart';
 
 class WorkoutEditorScreen extends StatefulWidget {
   final Workout workout;
@@ -312,6 +313,38 @@ class _WorkoutEditorScreenState extends State<WorkoutEditorScreen> {
     // No auto-save
   }
 
+  Future<void> _showTitleHistoryDialog() async {
+    final workoutProvider = context.read<WorkoutProvider>();
+    final titles = await workoutProvider.getPreviousTitles();
+    
+    if (!mounted) return;
+    
+    if (titles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('過去の入力履歴がありません')),
+      );
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('過去のワークアウト名'),
+        children: titles.map((title) => SimpleDialogOption(
+          onPressed: () {
+            _titleController.text = title;
+            setState(() => _isDirty = true);
+            Navigator.pop(context);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(title),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
   Future<void> _cleanupAndClose() async {
     // If the workout was initially empty (newly created) and we are closing without saving
     // (or discarding changes), delete the empty record to avoid clutter.
@@ -393,14 +426,15 @@ class _WorkoutEditorScreenState extends State<WorkoutEditorScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: () async {
-               await _saveWorkout(closeScreen: true);
-               if (!_currentWorkout.coinGranted) {
-                 await _completeWorkout();
-               }
+            icon: const Icon(Icons.timer),
+            tooltip: 'タイマー',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const TimerScreen(),
+                ),
+              );
             },
-            tooltip: '保存',
           ),
         ],
       ),
@@ -415,14 +449,26 @@ class _WorkoutEditorScreenState extends State<WorkoutEditorScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Title Input
-                        TextField(
-                          controller: _titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'ワークアウト名 (任意)',
-                            hintText: '例: 胸トレ、背中トレ',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (_) => setState(() => _isDirty = true),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _titleController,
+                                decoration: const InputDecoration(
+                                  labelText: 'ワークアウト名 (任意)',
+                                  hintText: '例: 胸トレ、背中トレ',
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (_) => setState(() => _isDirty = true),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.history),
+                              tooltip: '履歴から選択',
+                              onPressed: _showTitleHistoryDialog,
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
 

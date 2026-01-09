@@ -14,6 +14,73 @@ class HistoryListScreen extends StatefulWidget {
 }
 
 class _HistoryListScreenState extends State<HistoryListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  final Set<String> _pendingDeletions = {};
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _confirmCopyWorkout(Workout workout) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ワークアウトのコピー'),
+        content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                Text('"${workout.title.isEmpty ? '名称未設定' : workout.title}" をコピーして、\n今日の記録として作成しますか？'),
+                const SizedBox(height: 8),
+                Text(DateHelper.formatDisplayDate(DateHelper.fromDateKey(workout.workoutDateKey)), style: const TextStyle(color: Colors.grey)),
+            ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _copyToToday(workout);
+            },
+            child: const Text('コピーして作成'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyToToday(Workout workout) {
+    final newItems = workout.items.map((item) {
+        return item.copyWith(
+            sets: item.sets.map((s) => s.copyWith()).toList(),
+        );
+    }).toList();
+
+    final newWorkout = Workout(
+      id: '',
+      workoutDateKey: DateHelper.getTodayKey(),
+      title: workout.title,
+      note: workout.note,
+      items: newItems,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      coinGranted: false,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WorkoutEditorScreen(workout: newWorkout),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final workoutProvider = context.watch<WorkoutProvider>();
@@ -23,20 +90,102 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
     final sortedWorkouts = [...workouts];
     sortedWorkouts.sort((a, b) => b.workoutDateKey.compareTo(a.workoutDateKey));
 
+    // Filter by search query and pending deletions
+    final filteredWorkouts = sortedWorkouts.where((w) {
+      if (_pendingDeletions.contains(w.id)) return false;
+      if (_searchQuery.isEmpty) return true;
+      return w.title.contains(_searchQuery);
+    }).toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ワークアウト履歴'),
+        title: TextField(
+          controller: _searchController,
+          style: const TextStyle(color: Colors.black87),
+          decoration: InputDecoration(
+            hintText: 'ワークアウト履歴を検索...',
+            hintStyle: const TextStyle(color: Colors.black54),
+            border: InputBorder.none,
+            icon: const Icon(Icons.search, color: Colors.black54),
+            suffixIcon: _searchQuery.isNotEmpty 
+                ? IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.black54), 
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    }
+                  ) 
+                : null,
+          ),
+          onChanged: (val) => setState(() => _searchQuery = val),
+        ),
       ),
       body: workoutProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : sortedWorkouts.isEmpty
-              ? _buildEmptyState()
+          : filteredWorkouts.isEmpty
+              ? (_searchQuery.isEmpty ? _buildEmptyState() : const Center(child: Text('見つかりませんでした')))
               : ListView.builder(
                   padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                  itemCount: sortedWorkouts.length,
+                  itemCount: filteredWorkouts.length,
                   itemBuilder: (context, index) {
-                    final workout = sortedWorkouts[index];
-                    return _buildWorkoutCard(workout);
+                    final workout = filteredWorkouts[index];
+                    return Dismissible(
+                      key: Key(workout.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        color: Colors.red,
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      confirmDismiss: (direction) async {
+                        return await showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('削除の確認'),
+                            content: const Text('このワークアウトを削除しますか？\nデータは完全に削除され、元に戻せません。'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('キャンセル'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                child: const Text('削除'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      onDismissed: (direction) async {
+                        // Optimistically remove from list to ensure Dismissible is removed from tree
+                        setState(() {
+                          _pendingDeletions.add(workout.id);
+                        });
+                        
+                        try {
+                          await context.read<WorkoutProvider>().deleteWorkout(workout.id);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('ワークアウトを削除しました')),
+                            );
+                          }
+                        } catch (e) {
+                          // Restore if failed
+                          if (mounted) {
+                            setState(() {
+                              _pendingDeletions.remove(workout.id);
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('削除失敗: $e')),
+                            );
+                          }
+                        }
+                      },
+                      child: _buildWorkoutCard(workout),
+                    );
                   },
                 ),
     );
@@ -83,6 +232,7 @@ class _HistoryListScreenState extends State<HistoryListScreen> {
             ),
           );
         },
+        onLongPress: () => _confirmCopyWorkout(workout),
         borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
         child: Padding(
           padding: const EdgeInsets.all(16),
