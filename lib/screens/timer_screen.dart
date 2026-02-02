@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:vibration/vibration.dart';
 import '../utils/constants.dart';
+import '../utils/sound_generator.dart';
 import '../services/notification_service.dart';
 
 class TimerScreen extends StatefulWidget {
@@ -17,6 +20,8 @@ class _TimerScreenState extends State<TimerScreen> {
   int _remainingSeconds = 60;
   Timer? _timer;
   bool _isRunning = false;
+  bool _isAlarmPlaying = false;
+  final AudioPlayer _audioPlayer = AudioPlayer();
   final List<int> _presetTimes = [30, 45, 60, 90, 120, 180];
 
   // Custom Input Controllers
@@ -39,13 +44,15 @@ class _TimerScreenState extends State<TimerScreen> {
     _minScrollCtrl = FixedExtentScrollController(initialItem: m);
     // Seconds picker is 5-second steps steps, so divide by 5
     _secScrollCtrl = FixedExtentScrollController(initialItem: (s / 5).round());
-    
+
     _minTextCtrl.text = m.toString();
     _secTextCtrl.text = s.toString();
   }
 
   @override
   void dispose() {
+    _stopAlarm();
+    _audioPlayer.dispose();
     _timer?.cancel();
     _minScrollCtrl.dispose();
     _secScrollCtrl.dispose();
@@ -82,6 +89,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   void _resetTimer() {
+    _stopAlarm();
     _timer?.cancel();
     setState(() {
       _isRunning = false;
@@ -89,51 +97,45 @@ class _TimerScreenState extends State<TimerScreen> {
     });
   }
 
-  void _onTimerComplete() {
-    // Show notification
-    NotificationService().showTimerNotification(_seconds);
+  Future<void> _startAlarm() async {
+    setState(() => _isAlarmPlaying = true);
+    print('🔔 [TimerScreen] Starting alarm...');
 
-    // Vibrate device (pulsing feedback)
-    _vibrateAlert();
+    try {
+      // Play sound in loop
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      // Ensure volume is up
+      await _audioPlayer.setVolume(1.0);
 
-    // Show dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-          builder: (dialogContext) => AlertDialog(
-          title: const Text('タイマー終了！'),
-          content: const Text('インターバルが終了しました'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // Close dialog
-                _resetTimer();
-                if (mounted) {
-                  Navigator.of(context).pop(); // Close screen (return to editor)
-                }
-              },
-              child: const Text('OK'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _resetTimer();
-                _startTimer();
-              },
-              child: const Text('もう一度'),
-            ),
-          ],
-        ),
-      );
+      print('   [TimerScreen] Playing generated alarm sound');
+      final wavBytes = SoundGenerator.generateAlarmWav();
+      await _audioPlayer.play(BytesSource(wavBytes));
+      print('   [TimerScreen] Audio play request sent');
+
+      // Vibrate pattern
+      if (await Vibration.hasVibrator() ?? false) {
+        print('   [TimerScreen] Starting vibration');
+        Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
+      }
+    } catch (e) {
+      print('❌ [TimerScreen] Error playing alarm: $e');
     }
   }
 
-  Future<void> _vibrateAlert() async {
-    // Simple pulsing vibration using HapticFeedback
-    for (int i = 0; i < 5; i++) {
-        await HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 500));
-    }
+  void _stopAlarm() {
+    if (!_isAlarmPlaying) return;
+    print('🔕 [TimerScreen] Stopping alarm');
+    _audioPlayer.stop();
+    Vibration.cancel();
+    setState(() => _isAlarmPlaying = false);
+  }
+
+  void _onTimerComplete() {
+    // Show notification (for background)
+    NotificationService().showTimerNotification(_seconds);
+
+    // Start Alarm (Sound + Vibration)
+    _startAlarm();
   }
 
   String _formatTime(int seconds) {
@@ -155,9 +157,7 @@ class _TimerScreenState extends State<TimerScreen> {
     final progress = _seconds > 0 ? _remainingSeconds / _seconds : 0.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('インターバルタイマー'),
-      ),
+      appBar: AppBar(title: const Text('インターバルタイマー')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
@@ -169,11 +169,11 @@ class _TimerScreenState extends State<TimerScreen> {
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
-                    width: 250,
-                    height: 250,
+                    width: 200,
+                    height: 200,
                     child: CircularProgressIndicator(
                       value: progress,
-                      strokeWidth: 12,
+                      strokeWidth: 10,
                       backgroundColor: Colors.grey[200],
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _isRunning ? AppConstants.primaryColor : Colors.grey,
@@ -185,36 +185,56 @@ class _TimerScreenState extends State<TimerScreen> {
                     children: [
                       Text(
                         _formatTime(_remainingSeconds),
-                        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        style: Theme.of(context).textTheme.displayLarge
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
-                              fontSize: 64,
+                              fontSize: 48,
                             ),
                       ),
                       if (_isRunning)
                         Text(
                           '残り時間',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 32),
 
               // Control Buttons
-              if (!_isRunning) ...[
+              if (_isAlarmPlaying) ...[
+                // Stop Alarm Button
+                SizedBox(
+                  width: 250,
+                  height: 60,
+                  child: ElevatedButton.icon(
+                    onPressed: _stopAlarm,
+                    icon: const Icon(Icons.notifications_off, size: 32),
+                    label: const Text(
+                      'ストップ',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      elevation: 8,
+                      animationDuration: const Duration(milliseconds: 200),
+                    ),
+                  ),
+                ),
+              ] else if (!_isRunning) ...[
                 // Start Button
                 SizedBox(
                   width: 200,
                   child: ElevatedButton.icon(
                     onPressed: _startTimer,
                     icon: const Icon(Icons.play_arrow, size: 32),
-                    label: const Text(
-                      'スタート',
-                      style: TextStyle(fontSize: 20),
-                    ),
+                    label: const Text('スタート', style: TextStyle(fontSize: 20)),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       backgroundColor: AppConstants.successColor,
@@ -260,8 +280,8 @@ class _TimerScreenState extends State<TimerScreen> {
                 Text(
                   'プリセット',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Wrap(
@@ -270,7 +290,7 @@ class _TimerScreenState extends State<TimerScreen> {
                   alignment: WrapAlignment.center,
                   children: _presetTimes.map((time) {
                     final isSelected = _seconds == time;
-                    
+
                     // Format Label
                     String label;
                     if (time < 60) {
@@ -285,7 +305,9 @@ class _TimerScreenState extends State<TimerScreen> {
                       label: Text(
                         label,
                         style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                       selected: isSelected,
@@ -294,12 +316,14 @@ class _TimerScreenState extends State<TimerScreen> {
                           setState(() {
                             _seconds = time;
                             _remainingSeconds = time;
-                            
+
                             // Sync controllers
                             final m = time ~/ 60;
                             final s = time % 60;
-                            if (_minScrollCtrl.hasClients) _minScrollCtrl.jumpToItem(m);
-                            if (_secScrollCtrl.hasClients) _secScrollCtrl.jumpToItem((s / 5).round());
+                            if (_minScrollCtrl.hasClients)
+                              _minScrollCtrl.jumpToItem(m);
+                            if (_secScrollCtrl.hasClients)
+                              _secScrollCtrl.jumpToItem((s / 5).round());
                             _minTextCtrl.text = m.toString();
                             _secTextCtrl.text = s.toString();
                           });
@@ -319,13 +343,12 @@ class _TimerScreenState extends State<TimerScreen> {
                       children: [
                         Text(
                           'カスタム設定',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Pickers
                         SizedBox(
                           height: 120,
@@ -339,12 +362,21 @@ class _TimerScreenState extends State<TimerScreen> {
                                   onSelectedItemChanged: (index) {
                                     _minTextCtrl.text = index.toString();
                                   },
-                                  children: List.generate(100, (index) => Center(child: Text('$index'))),
+                                  children: List.generate(
+                                    100,
+                                    (index) => Center(child: Text('$index')),
+                                  ),
                                 ),
                               ),
-                              const Text('分', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const Text(
+                                '分',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const SizedBox(width: 8),
-                              
+
                               // Seconds Picker (0, 5, 10... 55)
                               Expanded(
                                 child: CupertinoPicker(
@@ -354,10 +386,20 @@ class _TimerScreenState extends State<TimerScreen> {
                                     final val = index * 5;
                                     _secTextCtrl.text = val.toString();
                                   },
-                                  children: List.generate(12, (index) => Center(child: Text('${index * 5}'))),
+                                  children: List.generate(
+                                    12,
+                                    (index) =>
+                                        Center(child: Text('${index * 5}')),
+                                  ),
                                 ),
                               ),
-                              const Text('秒', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const Text(
+                                '秒',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -374,13 +416,19 @@ class _TimerScreenState extends State<TimerScreen> {
                                 decoration: const InputDecoration(
                                   labelText: '分',
                                   border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
                                 ),
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                                 onChanged: (val) {
                                   final m = int.tryParse(val);
                                   if (m != null && m >= 0 && m < 100) {
-                                    if (_minScrollCtrl.hasClients) _minScrollCtrl.jumpToItem(m);
+                                    if (_minScrollCtrl.hasClients)
+                                      _minScrollCtrl.jumpToItem(m);
                                   }
                                 },
                               ),
@@ -394,15 +442,23 @@ class _TimerScreenState extends State<TimerScreen> {
                                 decoration: const InputDecoration(
                                   labelText: '秒',
                                   border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
                                 ),
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                                 onChanged: (val) {
                                   final s = int.tryParse(val);
                                   // Sync picker to nearest 5 multiple
                                   if (s != null && s >= 0 && s < 60) {
-                                     // Picker index = s / 5
-                                     if (_secScrollCtrl.hasClients) _secScrollCtrl.jumpToItem((s / 5).round());
+                                    // Picker index = s / 5
+                                    if (_secScrollCtrl.hasClients)
+                                      _secScrollCtrl.jumpToItem(
+                                        (s / 5).round(),
+                                      );
                                   }
                                 },
                               ),
@@ -412,8 +468,10 @@ class _TimerScreenState extends State<TimerScreen> {
                               flex: 2,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  final m = int.tryParse(_minTextCtrl.text) ?? 0;
-                                  final s = int.tryParse(_secTextCtrl.text) ?? 0;
+                                  final m =
+                                      int.tryParse(_minTextCtrl.text) ?? 0;
+                                  final s =
+                                      int.tryParse(_secTextCtrl.text) ?? 0;
                                   final total = m * 60 + s;
                                   if (total > 0) {
                                     setState(() {
@@ -421,12 +479,18 @@ class _TimerScreenState extends State<TimerScreen> {
                                       _remainingSeconds = total;
                                     });
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('タイマーを ${_formatPresetLabel(total)} に設定しました')),
+                                      SnackBar(
+                                        content: Text(
+                                          'タイマーを ${_formatPresetLabel(total)} に設定しました',
+                                        ),
+                                      ),
                                     );
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                 ),
                                 child: const Text('設定を保存'),
                               ),

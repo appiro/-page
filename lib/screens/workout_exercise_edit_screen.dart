@@ -10,6 +10,7 @@ import '../models/exercise_measure_type.dart';
 import '../widgets/set_input_row.dart';
 import '../widgets/last_record_display.dart';
 import '../utils/constants.dart';
+import 'timer_screen.dart';
 
 class WorkoutExerciseEditScreen extends StatefulWidget {
   final Workout workout;
@@ -347,6 +348,15 @@ class _WorkoutExerciseEditScreenState extends State<WorkoutExerciseEditScreen> {
         appBar: AppBar(
           title: Text(isNewExercise ? '種目を追加' : '種目を編集'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.timer_outlined),
+              tooltip: 'タイマー',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const TimerScreen()),
+                );
+              },
+            ),
             if (!isNewExercise)
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),

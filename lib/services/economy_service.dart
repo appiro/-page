@@ -12,12 +12,31 @@ class EconomyService {
 
   // Calculate coins from a workout (total volume)
   int calculateCoins(Workout workout) {
-    // Using Option A from requirements: Simple volume = Σ(weight × reps)
-    // Bodyweight exercises (weight=0) award 0 coins initially
-    final totalVolume = workout.totalVolume;
+    double totalScore = 0;
+
+    for (var item in workout.items) {
+      for (var set in item.sets) {
+        // 1. Weighted Sets (Volume)
+        if (set.weight != null && set.weight! > 0 && set.reps != null) {
+          totalScore += set.weight! * set.reps!;
+        }
+        // 2. Bodyweight / Reps only (No weight specified or weight is 0)
+        else if ((set.weight == null || set.weight! == 0) &&
+            set.reps != null &&
+            set.reps! > 0) {
+          // Assumption: 1 Bodyweight rep ~= 10 points (arbitrary balance)
+          totalScore += set.reps! * 10;
+        }
+        // 3. Time based
+        if (set.durationSec != null && set.durationSec! > 0) {
+          // 1 second = 1 point
+          totalScore += set.durationSec!;
+        }
+      }
+    }
 
     // Apply multiplier and round to integer
-    return (totalVolume * AppConstants.coinMultiplier).round();
+    return (totalScore * AppConstants.coinMultiplier).round();
   }
 
   // Award coins to user
