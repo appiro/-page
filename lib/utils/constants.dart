@@ -22,16 +22,20 @@ class AppConstants {
   static const double minTapTargetSize = 48.0;
 
   // Colors
-  static const Color primaryColor = Color(0xFF6200EE);
-  static const Color accentColor = Color(0xFF03DAC6);
-  static const Color errorColor = Color(0xFFB00020);
-  static const Color successColor = Color(0xFF4CAF50);
-  static const Color warningColor = Color(0xFFFF9800);
+  static const Color primaryColor = Color(0xFF0F172A); // Deep Navy for headers/actions
+  static const Color accentColor = Color(0xFF06B6D4); // Soft Cyan for highlights
+  static const Color backgroundColor = Color(0xFFF8FAFC); // Light Gray background
+  static const Color surfaceColor = Colors.white; // White surfaces
+  static const Color errorColor = Color(0xFFEF4444); // Less harsh red
+  static const Color successColor = Color(0xFF10B981); // Less harsh green
+  static const Color warningColor = Color(0xFFF59E0B);
 
   // Achievement Keys
   static const String achievementWeeklyGoal = 'weeklyGoalAchieved';
   static const String achievementTotalWorkouts = 'totalWorkouts';
   static const String achievementTotalCoins = 'totalCoinsEarned';
+  static const String achievementMaxVolume = 'maxVolume';
+  static const String achievementTotalVolume = 'totalVolume';
 
   // Firestore Collections
   static const String usersCollection = 'users';

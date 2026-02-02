@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'exercise_measure_type.dart';
 
 class Exercise {
   final String id;
@@ -7,6 +8,7 @@ class Exercise {
   final int order;
   final bool isArchived;
   final DateTime createdAt;
+  final ExerciseMeasureType measureType;
 
   Exercise({
     required this.id,
@@ -15,6 +17,7 @@ class Exercise {
     required this.order,
     this.isArchived = false,
     required this.createdAt,
+    this.measureType = ExerciseMeasureType.weightReps,
   });
 
   factory Exercise.fromFirestore(DocumentSnapshot doc) {
@@ -26,6 +29,9 @@ class Exercise {
       order: data['order'] ?? 0,
       isArchived: data['isArchived'] ?? false,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
+      measureType: data['measureType'] != null
+          ? ExerciseMeasureTypeExtension.fromFirestore(data['measureType'])
+          : ExerciseMeasureType.weightReps,
     );
   }
 
@@ -36,6 +42,7 @@ class Exercise {
       'order': order,
       'isArchived': isArchived,
       'createdAt': Timestamp.fromDate(createdAt),
+      'measureType': measureType.toFirestore(),
     };
   }
 
@@ -44,6 +51,7 @@ class Exercise {
     String? bodyPartId,
     int? order,
     bool? isArchived,
+    ExerciseMeasureType? measureType,
   }) {
     return Exercise(
       id: id,
@@ -52,6 +60,7 @@ class Exercise {
       order: order ?? this.order,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt,
+      measureType: measureType ?? this.measureType,
     );
   }
 }

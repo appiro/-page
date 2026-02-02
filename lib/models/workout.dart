@@ -8,6 +8,7 @@ class Workout {
   final String note;
   final List<WorkoutItem> items;
   final bool coinGranted; // Prevent double coin award
+  final bool isCompleted; // Completion status
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -18,6 +19,7 @@ class Workout {
     this.note = '',
     required this.items,
     this.coinGranted = false,
+    this.isCompleted = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -29,7 +31,8 @@ class Workout {
       workoutDateKey: data['workoutDateKey'] ?? '',
       title: data['title'] ?? '',
       note: data['note'] ?? '',
-      items: (data['items'] as List<dynamic>?)
+      items:
+          (data['items'] as List<dynamic>?)
               ?.map((item) => WorkoutItem.fromMap(item as Map<String, dynamic>))
               .toList() ??
           [],
@@ -58,6 +61,7 @@ class Workout {
     String? note,
     List<WorkoutItem>? items,
     bool? coinGranted,
+    bool? isCompleted,
     DateTime? updatedAt,
   }) {
     return Workout(
@@ -67,13 +71,15 @@ class Workout {
       note: note ?? this.note,
       items: items ?? this.items,
       coinGranted: coinGranted ?? this.coinGranted,
+      isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   // Calculate total volume for the entire workout
-  double get totalVolume => items.fold(0.0, (total, item) => total + item.totalVolume);
+  double get totalVolume =>
+      items.fold(0.0, (total, item) => total + item.totalVolume);
 
   // Get total number of sets
   int get totalSets => items.fold(0, (total, item) => total + item.sets.length);

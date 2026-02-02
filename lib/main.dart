@@ -15,12 +15,14 @@ import 'providers/master_provider.dart';
 
 import 'providers/economy_provider.dart';
 import 'providers/stats_provider.dart';
+import 'providers/favorite_exercise_provider.dart';
 import 'screens/home_screen.dart';
 import 'utils/constants.dart';
 import 'data/local_database.dart';
 import 'repositories/fit_repository.dart';
 import 'repositories/local_repository.dart';
 import 'repositories/firestore_repository.dart';
+import 'screens/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -135,6 +137,9 @@ class MyApp extends StatelessWidget {
                   );
                 },
               ),
+              ChangeNotifierProvider<FavoriteExerciseProvider>(
+                create: (context) => FavoriteExerciseProvider(),
+              ),
             ],
             child: MaterialApp(
               title: AppConstants.appName,
@@ -148,26 +153,80 @@ class MyApp extends StatelessWidget {
                 Locale('ja'),
               ],
               theme: ThemeData(
+                useMaterial3: true,
+                brightness: Brightness.light,
+                scaffoldBackgroundColor: AppConstants.backgroundColor,
                 colorScheme: ColorScheme.fromSeed(
                   seedColor: AppConstants.primaryColor,
+                  brightness: Brightness.light,
+                  primary: AppConstants.primaryColor, // Navy for primary actions
+                  secondary: AppConstants.accentColor, // Cyan for accents
+                  surface: AppConstants.surfaceColor, // White cards
+                  onSurface: const Color(0xFF1E293B), // Slate 800 for text
+                  background: AppConstants.backgroundColor,
+                  onBackground: const Color(0xFF1E293B),
                 ),
-                useMaterial3: true,
-                cardTheme: const CardThemeData(
-                  elevation: 2,
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: AppConstants.backgroundColor,
+                  foregroundColor: AppConstants.primaryColor,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                ),
+                cardTheme: CardThemeData(
+                  color: AppConstants.surfaceColor,
+                  elevation: 0, // Flat design requested
+                  margin: EdgeInsets.zero, // Handle margins manually for cleaner control or keep default? 
+                  // Let's keep elevation 0 but add a subtle border for definition
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(AppConstants.cardBorderRadius)),
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Color(0xFFE2E8F0), width: 1), // Slate 200
                   ),
                 ),
                 elevatedButtonTheme: ElevatedButtonThemeData(
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, AppConstants.minTapTargetSize),
+                    backgroundColor: AppConstants.primaryColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
+                floatingActionButtonTheme: const FloatingActionButtonThemeData(
+                  backgroundColor: AppConstants.accentColor,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                ),
+                bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+                  backgroundColor: AppConstants.surfaceColor,
+                  selectedItemColor: AppConstants.primaryColor,
+                  unselectedItemColor: Color(0xFF94A3B8), // Slate 400
+                  elevation: 0,
+                  type: BottomNavigationBarType.fixed,
+                ),
+                textTheme: const TextTheme(
+                  headlineMedium: TextStyle(
+                    color: AppConstants.primaryColor, 
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
+                  titleLarge: TextStyle(
+                    color: AppConstants.primaryColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  titleMedium: TextStyle(
+                    color: Color(0xFF334155), // Slate 700
+                    fontWeight: FontWeight.w600,
+                  ),
+                  bodyLarge: TextStyle(color: Color(0xFF334155)),
+                  bodyMedium: TextStyle(color: Color(0xFF475569)), // Slate 600
+                ),
+                iconTheme: const IconThemeData(
+                  color: AppConstants.primaryColor,
+                ),
               ),
-              home: const HomeScreen(),
+              home: const MainScreen(),
             ),
           );
         },

@@ -16,10 +16,9 @@ class ShopItem {
   });
 
   // Define all shop items
-  static List<ShopItem> getAllItems() {
-    return [
+  static const List<ShopItem> allItems = [
       // Badges
-      const ShopItem(
+      ShopItem(
         id: 'bronze_badge',
         name: 'Bronze Badge',
         description: 'A shiny bronze badge',
@@ -27,7 +26,7 @@ class ShopItem {
         category: 'badge',
         iconName: 'badge',
       ),
-      const ShopItem(
+      ShopItem(
         id: 'silver_badge',
         name: 'Silver Badge',
         description: 'A prestigious silver badge',
@@ -35,7 +34,7 @@ class ShopItem {
         category: 'badge',
         iconName: 'badge',
       ),
-      const ShopItem(
+      ShopItem(
         id: 'gold_badge',
         name: 'Gold Badge',
         description: 'An elite gold badge',
@@ -45,7 +44,7 @@ class ShopItem {
       ),
       
       // Equipment (cosmetic only)
-      const ShopItem(
+      ShopItem(
         id: 'lifting_belt',
         name: 'Lifting Belt',
         description: 'Professional lifting belt icon',
@@ -53,7 +52,7 @@ class ShopItem {
         category: 'equipment',
         iconName: 'fitness_center',
       ),
-      const ShopItem(
+      ShopItem(
         id: 'wrist_wraps',
         name: 'Wrist Wraps',
         description: 'Support wrist wraps icon',
@@ -61,7 +60,7 @@ class ShopItem {
         category: 'equipment',
         iconName: 'sports',
       ),
-      const ShopItem(
+      ShopItem(
         id: 'knee_sleeves',
         name: 'Knee Sleeves',
         description: 'Protective knee sleeves icon',
@@ -71,7 +70,7 @@ class ShopItem {
       ),
       
       // Special Titles
-      const ShopItem(
+      ShopItem(
         id: 'beast_mode_title',
         name: 'Beast Mode',
         description: 'Unleash your inner beast',
@@ -79,7 +78,7 @@ class ShopItem {
         category: 'title',
         iconName: 'pets',
       ),
-      const ShopItem(
+      ShopItem(
         id: 'champion_title',
         name: 'Champion',
         description: 'For true champions',
@@ -87,7 +86,7 @@ class ShopItem {
         category: 'title',
         iconName: 'emoji_events',
       ),
-      const ShopItem(
+      ShopItem(
         id: 'legend_title',
         name: 'Legend',
         description: 'Legendary status',
@@ -95,8 +94,9 @@ class ShopItem {
         category: 'title',
         iconName: 'stars',
       ),
-    ];
-  }
+  ];
+
+  static List<ShopItem> getAllItems() => allItems;
 
   static ShopItem? getItemById(String id) {
     try {

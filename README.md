@@ -164,7 +164,8 @@ lib/
 
 - **State Management**: Provider
 - **Backend**: Firebase (Auth, Firestore)
-- **Local Storage**: Firestore offline persistence
+- *
+*Local Storage**: Firestore offline persistence
 - **Notifications**: flutter_local_notifications
 
 ## Key Decisions
@@ -174,10 +175,16 @@ lib/
 - Bodyweight exercises (weight=0) award 0 coins initially
 - Coins granted once per workout (no recalculation on edit)
 
-### Weekly Goal
-- Counts workouts in current week
-- Week starts on Monday (configurable in settings)
-- Bonus coins awarded on goal achievement
+### Weekly Goal (Cycle-Based Reward System)
+- **7-Day Cycles**: Goals are tracked in fixed 7-day cycles from an anchor date, not calendar weeks
+- **Anchor Date**: Set when user first configures their weekly goal
+- **Reward Formula**: `100 + (goal × 50)` coins per cycle
+  - Example: 3 workouts/week → 250 coins
+- **One Reward Per Cycle**: Prevents duplicate rewards within the same 7-day period
+- **Goal Changes**: Limited to once per cycle (can be reset with long-press)
+- **Cycle Tracking**: Uses `lastRewardedCycleIndex` to track which cycles have been rewarded
+
+See [WEEKLY_GOAL_TEST.md](WEEKLY_GOAL_TEST.md) for detailed testing procedures.
 
 ## Development
 

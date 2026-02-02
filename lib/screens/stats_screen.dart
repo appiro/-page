@@ -34,6 +34,7 @@ class _StatsScreenState extends State<StatsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final masterProvider = context.read<MasterProvider>();
       if (masterProvider.bodyParts.isNotEmpty) {
         setState(() {

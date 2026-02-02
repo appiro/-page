@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "1092575471138",
+    "project_id": "fitapp-4482a",
+    "storage_bucket": "fitapp-4482a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092575471138:android:5765f040837e0886330c7b",
+        "android_client_info": {
+          "package_name": "com.example.fit_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1092575471138-ttsr5q2a22b820hm8n56s0eo6njlhare.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fit_app",
+            "certificate_hash": "dcf0a486f2790ad71b473cb58f213264dddb5e92"
+          }
+        },
+        {
+          "client_id": "1092575471138-204reomvv37v17m445tli30a0e6ovvdr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYwzoLntYfnPE8kzU3jU-BHCEitKFl0p4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1092575471138-204reomvv37v17m445tli30a0e6ovvdr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1092575471138-if45k6iiu7jafqta7v1ruviscahlcm43.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fitApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092575471138:android:666e4835f346fe95330c7b",
+        "android_client_info": {
+          "package_name": "jp.appiro.fit_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1092575471138-204reomvv37v17m445tli30a0e6ovvdr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYwzoLntYfnPE8kzU3jU-BHCEitKFl0p4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1092575471138-204reomvv37v17m445tli30a0e6ovvdr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1092575471138-if45k6iiu7jafqta7v1ruviscahlcm43.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fitApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,6 +2,7 @@ import '../models/workout.dart';
 import '../models/title.dart';
 import '../models/shop_item.dart';
 import '../utils/constants.dart';
+import '../models/user_inventory.dart';
 import '../repositories/fit_repository.dart';
 
 class EconomyService {
@@ -14,7 +15,7 @@ class EconomyService {
     // Using Option A from requirements: Simple volume = Σ(weight × reps)
     // Bodyweight exercises (weight=0) award 0 coins initially
     final totalVolume = workout.totalVolume;
-    
+
     // Apply multiplier and round to integer
     return (totalVolume * AppConstants.coinMultiplier).round();
   }
@@ -27,16 +28,23 @@ class EconomyService {
         totalCoins: economyState.totalCoins + amount,
         achievementCounts: {
           ...economyState.achievementCounts,
-          AppConstants.achievementTotalCoins: 
-              economyState.getAchievementCount(AppConstants.achievementTotalCoins) + amount,
+          AppConstants.achievementTotalCoins:
+              economyState.getAchievementCount(
+                AppConstants.achievementTotalCoins,
+              ) +
+              amount,
         },
       );
-      
+
       await _repository.updateEconomyState(uid, newState);
     } catch (e) {
       throw Exception('Failed to award coins: ${e.toString()}');
     }
   }
+
+  // Alias for awardCoins
+  Future<void> addCoins(String uid, int amount) async =>
+      awardCoins(uid, amount);
 
   // Deduct coins from user
   Future<void> deductCoins(String uid, int amount) async {
@@ -44,11 +52,17 @@ class EconomyService {
       final economyState = await _repository.getEconomyState(uid);
       final currentCoins = economyState.totalCoins;
       // Ensure not below 0
-      final newCoins = (currentCoins - amount) < 0 ? 0 : (currentCoins - amount);
-      
+      final newCoins = (currentCoins - amount) < 0
+          ? 0
+          : (currentCoins - amount);
+
       // Also reduce lifetime to prevent farming
-      final currentLifetime = economyState.getAchievementCount(AppConstants.achievementTotalCoins);
-      final newLifetime = (currentLifetime - amount) < 0 ? 0 : (currentLifetime - amount);
+      final currentLifetime = economyState.getAchievementCount(
+        AppConstants.achievementTotalCoins,
+      );
+      final newLifetime = (currentLifetime - amount) < 0
+          ? 0
+          : (currentLifetime - amount);
 
       final newState = economyState.copyWith(
         totalCoins: newCoins,
@@ -57,10 +71,31 @@ class EconomyService {
           AppConstants.achievementTotalCoins: newLifetime,
         },
       );
-      
+
       await _repository.updateEconomyState(uid, newState);
     } catch (e) {
       throw Exception('Failed to deduct coins: ${e.toString()}');
+    }
+  }
+
+  // Perform a transaction-like update for purchasing
+  // Since we don't have true transactions in abstract repository layer yet,
+  // we rely on optimistic updates or separate calls.
+  // This method is an alias
+  Future<void> consumeCoins(String uid, int amount) async =>
+      deductCoins(uid, amount);
+
+  // Update inventory
+  Future<void> updateInventory(
+    String uid,
+    List<UserInventory> inventory,
+  ) async {
+    try {
+      final economyState = await _repository.getEconomyState(uid);
+      final newState = economyState.copyWith(inventory: inventory);
+      await _repository.updateEconomyState(uid, newState);
+    } catch (e) {
+      throw Exception('Failed to update inventory: ${e.toString()}');
     }
   }
 
@@ -97,7 +132,9 @@ class EconomyService {
         if (!newUnlockedTitles.contains(itemId)) {
           newUnlockedTitles.add(itemId);
         }
-        final stateWithTitle = newState.copyWith(unlockedTitleIds: newUnlockedTitles);
+        final stateWithTitle = newState.copyWith(
+          unlockedTitleIds: newUnlockedTitles,
+        );
         await _repository.updateEconomyState(uid, stateWithTitle);
       } else {
         await _repository.updateEconomyState(uid, newState);
@@ -134,11 +171,22 @@ class EconomyService {
   }
 
   // Check and unlock titles based on achievements
-  Future<List<String>> checkAndUnlockTitles(String uid) async {
+  Future<List<String>> checkAndUnlockTitles(
+    String uid, {
+    int? currentStreak,
+  }) async {
+    print('🔍 [checkAndUnlockTitles] Starting check for uid: $uid');
+    print('   Streak parameter: $currentStreak');
+
     try {
       final economyState = await _repository.getEconomyState(uid);
       final allTitles = Title.getAllTitles();
       final newlyUnlocked = <String>[];
+
+      print(
+        '   Currently unlocked: ${economyState.unlockedTitleIds.length} titles',
+      );
+      print('   Total titles to check: ${allTitles.length}');
 
       for (var title in allTitles) {
         // Skip if already unlocked
@@ -150,69 +198,231 @@ class EconomyService {
         bool shouldUnlock = false;
 
         switch (title.id) {
-          case 'first_step':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementTotalWorkouts) >= 1;
+          // --- Workout Count ---
+          case 'first_log':
+            final count = economyState.getAchievementCount(
+              AppConstants.achievementTotalWorkouts,
+            );
+            shouldUnlock = count >= 1;
+            if (!shouldUnlock) print('   ❌ ${title.id}: $count < 1');
             break;
-          case 'consistent':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementWeeklyGoal) >= 1;
+          case 'stack_10':
+            final count = economyState.getAchievementCount(
+              AppConstants.achievementTotalWorkouts,
+            );
+            shouldUnlock = count >= 10;
+            if (!shouldUnlock) print('   ❌ ${title.id}: $count < 10');
             break;
-          case 'dedicated':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementWeeklyGoal) >= 3;
+          case 'stack_50':
+            final count = economyState.getAchievementCount(
+              AppConstants.achievementTotalWorkouts,
+            );
+            shouldUnlock = count >= 50;
+            if (!shouldUnlock) print('   ❌ ${title.id}: $count < 50');
             break;
-          case 'iron_will':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementWeeklyGoal) >= 10;
+          case 'stack_100':
+            final count = economyState.getAchievementCount(
+              AppConstants.achievementTotalWorkouts,
+            );
+            shouldUnlock = count >= 100;
+            if (!shouldUnlock) print('   ❌ ${title.id}: $count < 100');
             break;
+          case 'routine_complete':
+            final count = economyState.getAchievementCount(
+              AppConstants.achievementTotalWorkouts,
+            );
+            shouldUnlock = count >= 300;
+            if (!shouldUnlock) print('   ❌ ${title.id}: $count < 300');
+            break;
+
+          // --- Streak ---
+          case 'not_mikkabouzu':
+            if (currentStreak != null) {
+              shouldUnlock = currentStreak >= 1;
+              if (!shouldUnlock)
+                print('   ❌ ${title.id}: streak $currentStreak < 1');
+            } else {
+              print('   ⚠️ ${title.id}: streak parameter is null');
+            }
+            break;
+          case 'consistency_power':
+            if (currentStreak != null) {
+              shouldUnlock = currentStreak >= 3;
+              if (!shouldUnlock)
+                print('   ❌ ${title.id}: streak $currentStreak < 3');
+            } else {
+              print('   ⚠️ ${title.id}: streak parameter is null');
+            }
+            break;
+          case 'life_part':
+            if (currentStreak != null) {
+              shouldUnlock = currentStreak >= 6;
+              if (!shouldUnlock)
+                print('   ❌ ${title.id}: streak $currentStreak < 6');
+            } else {
+              print('   ⚠️ ${title.id}: streak parameter is null');
+            }
+            break;
+          case 'iron_man_streak':
+            if (currentStreak != null) {
+              shouldUnlock = currentStreak >= 12;
+              if (!shouldUnlock)
+                print('   ❌ ${title.id}: streak $currentStreak < 12');
+            } else {
+              print('   ⚠️ ${title.id}: streak parameter is null');
+            }
+            break;
+
+          // --- Volume (Single Max) ---
+          case 'pump_intro':
+            final vol = economyState.getAchievementCount(
+              AppConstants.achievementMaxVolume,
+            );
+            shouldUnlock = vol >= 5000;
+            if (!shouldUnlock) print('   ❌ ${title.id}: maxVol $vol < 5000');
+            break;
+          case 'oikomi_expert':
+            final vol = economyState.getAchievementCount(
+              AppConstants.achievementMaxVolume,
+            );
+            shouldUnlock = vol >= 10000;
+            if (!shouldUnlock) print('   ❌ ${title.id}: maxVol $vol < 10000');
+            break;
+          case 'monster_routine':
+            final vol = economyState.getAchievementCount(
+              AppConstants.achievementMaxVolume,
+            );
+            shouldUnlock = vol >= 20000;
+            if (!shouldUnlock) print('   ❌ ${title.id}: maxVol $vol < 20000');
+            break;
+
+          // --- Total Volume ---
+          case 'load_1_ton':
+            final vol = economyState.getAchievementCount(
+              AppConstants.achievementTotalVolume,
+            );
+            shouldUnlock = vol >= 1000000;
+            if (!shouldUnlock)
+              print('   ❌ ${title.id}: totalVol $vol < 1000000');
+            break;
+          case 'load_10_ton':
+            final vol = economyState.getAchievementCount(
+              AppConstants.achievementTotalVolume,
+            );
+            shouldUnlock = vol >= 10000000;
+            if (!shouldUnlock)
+              print('   ❌ ${title.id}: totalVol $vol < 10000000');
+            break;
+
+          // --- Coins ---
           case 'coin_collector':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementTotalCoins) >= 1000;
+            final coins = economyState.getAchievementCount(
+              AppConstants.achievementTotalCoins,
+            );
+            shouldUnlock = coins >= 1000;
+            if (!shouldUnlock) print('   ❌ ${title.id}: coins $coins < 1000');
             break;
           case 'wealthy':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementTotalCoins) >= 5000;
+            final coins = economyState.getAchievementCount(
+              AppConstants.achievementTotalCoins,
+            );
+            shouldUnlock = coins >= 5000;
+            if (!shouldUnlock) print('   ❌ ${title.id}: coins $coins < 5000');
             break;
-          case 'beginner':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementTotalWorkouts) >= 5;
-            break;
-          case 'intermediate':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementTotalWorkouts) >= 25;
-            break;
-          case 'advanced':
-            shouldUnlock = economyState.getAchievementCount(AppConstants.achievementTotalWorkouts) >= 100;
+          case 'millionaire':
+            final coins = economyState.getAchievementCount(
+              AppConstants.achievementTotalCoins,
+            );
+            shouldUnlock = coins >= 10000;
+            if (!shouldUnlock) print('   ❌ ${title.id}: coins $coins < 10000');
             break;
         }
 
         if (shouldUnlock) {
+          print('   ✅ UNLOCKING: ${title.id}');
           newlyUnlocked.add(title.id);
         }
       }
 
       // Update economy state with newly unlocked titles
       if (newlyUnlocked.isNotEmpty) {
-        final newUnlockedTitles = [...economyState.unlockedTitleIds, ...newlyUnlocked];
-        final newState = economyState.copyWith(unlockedTitleIds: newUnlockedTitles);
+        print(
+          '💾 Saving ${newlyUnlocked.length} newly unlocked titles to Firestore...',
+        );
+        final newUnlockedTitles = [
+          ...economyState.unlockedTitleIds,
+          ...newlyUnlocked,
+        ];
+        final newState = economyState.copyWith(
+          unlockedTitleIds: newUnlockedTitles,
+        );
         await _repository.updateEconomyState(uid, newState);
+        print('✅ Titles saved successfully');
+      } else {
+        print('ℹ️ No titles to save');
       }
 
       return newlyUnlocked;
     } catch (e) {
+      print('❌ Error in checkAndUnlockTitles: $e');
       throw Exception('Failed to check titles: ${e.toString()}');
     }
   }
 
   // Increment achievement count
-  Future<void> incrementAchievement(String uid, String achievementKey, {int amount = 1}) async {
+  Future<void> incrementAchievement(
+    String uid,
+    String achievementKey, {
+    int amount = 1,
+  }) async {
     try {
       final economyState = await _repository.getEconomyState(uid);
       final currentCount = economyState.getAchievementCount(achievementKey);
-      
+
       final newState = economyState.copyWith(
         achievementCounts: {
           ...economyState.achievementCounts,
           achievementKey: currentCount + amount,
         },
       );
-      
+
       await _repository.updateEconomyState(uid, newState);
     } catch (e) {
       throw Exception('Failed to increment achievement: ${e.toString()}');
+    }
+  }
+
+  // Update volume stats
+  Future<void> updateVolumeStats(
+    String uid,
+    int workoutMaxVolume,
+    int workoutTotalVolume,
+  ) async {
+    try {
+      final economyState = await _repository.getEconomyState(uid);
+      final currentTotal = economyState.getAchievementCount(
+        AppConstants.achievementTotalVolume,
+      );
+      final currentMax = economyState.getAchievementCount(
+        AppConstants.achievementMaxVolume,
+      );
+
+      final newTotal = currentTotal + workoutTotalVolume;
+      final newMax = (workoutMaxVolume > currentMax)
+          ? workoutMaxVolume
+          : currentMax;
+
+      final newState = economyState.copyWith(
+        achievementCounts: {
+          ...economyState.achievementCounts,
+          AppConstants.achievementTotalVolume: newTotal,
+          AppConstants.achievementMaxVolume: newMax,
+        },
+      );
+
+      await _repository.updateEconomyState(uid, newState);
+    } catch (e) {
+      throw Exception('Failed to update volume stats: ${e.toString()}');
     }
   }
 
@@ -223,6 +433,75 @@ class EconomyService {
       await incrementAchievement(uid, AppConstants.achievementWeeklyGoal);
     } catch (e) {
       throw Exception('Failed to award weekly goal bonus: ${e.toString()}');
+    }
+  }
+
+  // ==================== Fishing ====================
+
+  // Award fishing tickets
+  Future<void> awardTickets(String uid, int amount) async {
+    try {
+      final economyState = await _repository.getEconomyState(uid);
+      final newState = economyState.copyWith(
+        fishingTickets: economyState.fishingTickets + amount,
+      );
+      await _repository.updateEconomyState(uid, newState);
+    } catch (e) {
+      throw Exception('Failed to award tickets: ${e.toString()}');
+    }
+  }
+
+  // Alias for awardTickets
+  Future<void> addTickets(String uid, int amount) async =>
+      awardTickets(uid, amount);
+
+  // Consume tickets
+  Future<void> consumeTickets(String uid, int amount) async {
+    try {
+      final economyState = await _repository.getEconomyState(uid);
+      if (economyState.fishingTickets < amount) {
+        throw Exception('Not enough tickets');
+      }
+
+      final newState = economyState.copyWith(
+        fishingTickets: economyState.fishingTickets - amount,
+      );
+      await _repository.updateEconomyState(uid, newState);
+    } catch (e) {
+      throw Exception('Failed to consume tickets: ${e.toString()}');
+    }
+  }
+
+  // Add caught fish to collection
+  Future<void> addCaughtFish(String uid, List<String> fishIds) async {
+    try {
+      final economyState = await _repository.getEconomyState(uid);
+      final newCollection = Map<String, int>.from(economyState.fishCollection);
+
+      for (final fishId in fishIds) {
+        newCollection[fishId] = (newCollection[fishId] ?? 0) + 1;
+      }
+
+      final newState = economyState.copyWith(fishCollection: newCollection);
+      await _repository.updateEconomyState(uid, newState);
+    } catch (e) {
+      throw Exception('Failed to add caught fish: ${e.toString()}');
+    }
+  }
+
+  // Manual unlock title (e.g. for purchase)
+  Future<void> unlockTitle(String uid, String titleId) async {
+    try {
+      final economyState = await _repository.getEconomyState(uid);
+      if (!economyState.unlockedTitleIds.contains(titleId)) {
+        final newUnlockedTitles = [...economyState.unlockedTitleIds, titleId];
+        final newState = economyState.copyWith(
+          unlockedTitleIds: newUnlockedTitles,
+        );
+        await _repository.updateEconomyState(uid, newState);
+      }
+    } catch (e) {
+      throw Exception('Failed to unlock title: ${e.toString()}');
     }
   }
 }

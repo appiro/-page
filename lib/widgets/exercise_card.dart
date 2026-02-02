@@ -32,6 +32,7 @@ class _ExerciseCardState extends State<ExerciseCard> {
   late WorkoutItem _currentItem;
   final TextEditingController _memoController = TextEditingController();
   bool _hideLastRecord = false;
+  int? _newlyAddedSetIndex; // Track index to focus
 
   @override
   void initState() {
@@ -48,7 +49,11 @@ class _ExerciseCardState extends State<ExerciseCard> {
 
   void _addSet() {
     final newSets = [..._currentItem.sets, WorkoutSet(weight: 0, reps: 0)];
-    _updateItem(_currentItem.copyWith(sets: newSets));
+    setState(() {
+      _currentItem = _currentItem.copyWith(sets: newSets);
+      _newlyAddedSetIndex = newSets.length - 1;
+    });
+    widget.onChanged(_currentItem);
   }
 
   void _updateSet(int index, WorkoutSet set) {
@@ -161,8 +166,9 @@ class _ExerciseCardState extends State<ExerciseCard> {
 
   @override
   Widget build(BuildContext context) {
-    final economyProvider = context.watch<EconomyProvider>();
-    final unit = economyProvider.userProfile?.unit ?? 'kg';
+    final unit = context.select<EconomyProvider, String>(
+      (provider) => provider.userProfile?.unit ?? 'kg',
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -228,13 +234,17 @@ class _ExerciseCardState extends State<ExerciseCard> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _currentItem.sets.length,
               itemBuilder: (context, index) {
+                // Focus if it's a newly added set, OR if it's the first set of a new exercise (and we haven't added manual sets yet)
+                final bool shouldAutoFocus = (index == _newlyAddedSetIndex) || 
+                                           (widget.shouldFocusOnLoad && index == 0 && _newlyAddedSetIndex == null);
+                                           
                 return SetInputRow(
                   set: _currentItem.sets[index],
                   setNumber: index + 1,
                   unit: unit,
                   onChanged: (set) => _updateSet(index, set),
                   onDelete: () => _deleteSet(index),
-                  autoFocus: widget.shouldFocusOnLoad && index == 0,
+                  autoFocus: shouldAutoFocus,
                 );
               },
             ),

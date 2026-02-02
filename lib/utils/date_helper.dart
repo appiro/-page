@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class DateHelper {
@@ -30,12 +31,18 @@ class DateHelper {
       // Default to Monday
       daysToSubtract = date.weekday - 1; // Monday = 0
     }
-    return DateTime(date.year, date.month, date.day).subtract(Duration(days: daysToSubtract));
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: daysToSubtract));
   }
 
   // Get end of week
   static DateTime getWeekEnd(DateTime weekStart) {
-    return weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+    return weekStart.add(
+      const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+    );
   }
 
   // Check if two dates are the same day
@@ -53,17 +60,52 @@ class DateHelper {
     return isSameDay(date, DateTime.now());
   }
 
-  // Get list of dates in current week
-  static List<String> getCurrentWeekDateKeys(String weekStartsOn) {
-    final now = DateTime.now();
-    final weekStart = getWeekStart(now, weekStartsOn);
-    final List<String> dateKeys = [];
-    
-    for (int i = 0; i < 7; i++) {
-      final date = weekStart.add(Duration(days: i));
-      dateKeys.add(toDateKey(date));
+  // --- Cycle-based Goal Logic ---
+
+  // Calculate cycle index for a given date relative to anchor
+  static int getCycleIndex(DateTime anchor, DateTime target) {
+    // Normalize to UTC milliseconds to avoid timezone/DST shifts affecting calculation
+    final anchorMs = anchor.toUtc().millisecondsSinceEpoch;
+    final targetMs = target.toUtc().millisecondsSinceEpoch;
+    final diffMs = targetMs - anchorMs;
+
+    // 1 week = 7 * 24 * 60 * 60 * 1000 ms
+    const weekMs = 7 * 24 * 3600 * 1000;
+
+    if (diffMs < 0) return -1; // Before anchor
+    return (diffMs / weekMs).floor();
+  }
+
+  // Get start (inclusive) and end (exclusive) for a cycle
+  static DateTimeRange getCycleRange(DateTime anchor, int cycleIndex) {
+    final start = anchor.add(Duration(days: cycleIndex * 7));
+    final end = start.add(const Duration(days: 7));
+    return DateTimeRange(start: start, end: end);
+  }
+
+  // Get list of date keys covering the cycle range (for querying)
+  // Range is [start, end) - inclusive of start, exclusive of end
+  static List<String> getDateKeysForCycle(DateTime anchor, int cycleIndex) {
+    final range = getCycleRange(anchor, cycleIndex);
+    final keys = <String>{}; // Set to avoid duplicates
+
+    // Debug logging
+    print('📅 [getDateKeysForCycle] anchor: $anchor, cycleIndex: $cycleIndex');
+    print('   range.start: ${range.start}');
+    print('   range.end: ${range.end}');
+
+    // Iterate from start day to the day before end
+    // Since end is exclusive, we stop when current reaches end's date
+    var current = range.start;
+
+    // Loop while current is before end (not including end's date)
+    while (current.isBefore(range.end)) {
+      keys.add(toDateKey(current));
+      current = current.add(const Duration(days: 1));
     }
-    
-    return dateKeys;
+
+    print('   Generated keys: $keys');
+
+    return keys.toList();
   }
 }

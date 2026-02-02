@@ -25,21 +25,30 @@ class StatsService {
       final dataPoints = <DataPoint>[];
 
       for (var workout in workouts) {
-        final items = workout.items.where((i) => i.exerciseId == exerciseId).toList();
+        final items = workout.items
+            .where((i) => i.exerciseId == exerciseId)
+            .toList();
         if (items.isEmpty) continue;
-        
+
         final item = items.first;
 
         if (item.sets.isNotEmpty) {
-          // Find max weight in this workout
-          final maxWeight = item.sets
-              .map((s) => s.weight)
+          // Find max weight in this workout (filter out time-based sets)
+          final weightSets = item.sets
+              .where((s) => s.weight != null && s.reps != null)
+              .toList();
+          if (weightSets.isEmpty) continue;
+
+          final maxWeight = weightSets
+              .map((s) => s.weight!)
               .reduce((a, b) => a > b ? a : b);
 
-          dataPoints.add(DataPoint(
-            date: DateTime.parse(workout.workoutDateKey),
-            value: maxWeight,
-          ));
+          dataPoints.add(
+            DataPoint(
+              date: DateTime.parse(workout.workoutDateKey),
+              value: maxWeight,
+            ),
+          );
         }
       }
 
@@ -69,26 +78,35 @@ class StatsService {
       final dataPoints = <DataPoint>[];
 
       for (var workout in workouts) {
-        final items = workout.items.where((i) => i.exerciseId == exerciseId).toList();
+        final items = workout.items
+            .where((i) => i.exerciseId == exerciseId)
+            .toList();
         if (items.isEmpty) continue;
-        
+
         final item = items.first;
 
         if (item.sets.isNotEmpty) {
-          // Calculate max 1RM from all sets
+          // Calculate max 1RM from all sets (filter out time-based sets)
           double maxRM = 0.0;
           for (var set in item.sets) {
-            final rm = RMCalculator.calculateOneRepMax(set.weight, set.reps);
-            if (rm > maxRM) {
-              maxRM = rm;
+            if (set.weight != null && set.reps != null) {
+              final rm = RMCalculator.calculateOneRepMax(
+                set.weight!,
+                set.reps!,
+              );
+              if (rm > maxRM) {
+                maxRM = rm;
+              }
             }
           }
 
           if (maxRM > 0) {
-            dataPoints.add(DataPoint(
-              date: DateTime.parse(workout.workoutDateKey),
-              value: maxRM,
-            ));
+            dataPoints.add(
+              DataPoint(
+                date: DateTime.parse(workout.workoutDateKey),
+                value: maxRM,
+              ),
+            );
           }
         }
       }
@@ -147,16 +165,21 @@ class StatsService {
     double totalVolume = 0;
 
     for (var workout in workouts) {
-      final items = workout.items.where((i) => i.exerciseId == exerciseId).toList();
+      final items = workout.items
+          .where((i) => i.exerciseId == exerciseId)
+          .toList();
       if (items.isEmpty) continue;
-      
+
       final item = items.first;
 
       for (var set in item.sets) {
-        totalWeight += set.weight;
-        totalReps += set.reps;
-        totalSets++;
-        totalVolume += set.volume;
+        // Only include weight×reps based sets
+        if (set.weight != null && set.reps != null) {
+          totalWeight += set.weight!;
+          totalReps += set.reps!;
+          totalSets++;
+          totalVolume += set.volume;
+        }
       }
     }
 
@@ -186,14 +209,20 @@ class StatsService {
         return null;
       }
 
+      // Filter out time-based sets
+      final weightBasedCurrentSets = currentSets
+          .where((s) => s.weight != null && s.reps != null)
+          .toList();
+      if (weightBasedCurrentSets.isEmpty) return null;
+
       // Find max weight from last record
       final lastMaxWeight = lastRecord
           .map((s) => (s['weight'] as num).toDouble())
           .reduce((a, b) => a > b ? a : b);
 
       // Find max weight from current sets
-      final currentMaxWeight = currentSets
-          .map((s) => s.weight)
+      final currentMaxWeight = weightBasedCurrentSets
+          .map((s) => s.weight!)
           .reduce((a, b) => a > b ? a : b);
 
       // Find max reps at max weight
@@ -202,9 +231,9 @@ class StatsService {
           .map((s) => s['reps'] as int)
           .reduce((a, b) => a > b ? a : b);
 
-      final currentMaxReps = currentSets
+      final currentMaxReps = weightBasedCurrentSets
           .where((s) => s.weight == currentMaxWeight)
-          .map((s) => s.reps)
+          .map((s) => s.reps!)
           .reduce((a, b) => a > b ? a : b);
 
       return LastWorkoutComparison(
@@ -284,4 +313,3 @@ class LastWorkoutComparison {
     }
   }
 }
-

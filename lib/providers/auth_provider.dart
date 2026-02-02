@@ -82,15 +82,17 @@ class AuthProvider with ChangeNotifier {
 
       // 4. Migrate User Settings
       final localProfile = await localRepo.getUserProfile('guest');
-      if (localProfile != null) {
-        await firestoreRepo.updateUserProfile(newUid, {
-          'weeklyGoal': localProfile.weeklyGoal,
-          'weekStartsOn': localProfile.weekStartsOn,
-          'vibrationOn': localProfile.vibrationOn,
-          'notificationsOn': localProfile.notificationsOn,
-          // Don't overwrite displayName/email from Google
-        });
-      }
+        if (localProfile != null) {
+          await firestoreRepo.updateUserProfile(newUid, {
+            'weeklyGoal': localProfile.weeklyGoal,
+            'weeklyGoalAnchor': localProfile.weeklyGoalAnchor,
+            'lastRewardedCycleIndex': localProfile.lastRewardedCycleIndex,
+            'weeklyGoalUpdatedAt': localProfile.weeklyGoalUpdatedAt,
+            'vibrationOn': localProfile.vibrationOn,
+            'notificationsOn': localProfile.notificationsOn,
+            // Don't overwrite displayName/email from Google
+          });
+        }
       
     } catch (e) {
       print("Migration Error: $e");

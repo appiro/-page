@@ -6,15 +6,12 @@ import '../providers/master_provider.dart';
 import '../utils/constants.dart';
 import '../utils/date_helper.dart';
 import '../models/workout.dart';
-import 'workout_editor_screen.dart';
+import 'workout_exercise_list_screen.dart';
 
 class CalendarHistoryScreen extends StatefulWidget {
   final DateTime? initialFocusedDay;
 
-  const CalendarHistoryScreen({
-    super.key,
-    this.initialFocusedDay,
-  });
+  const CalendarHistoryScreen({super.key, this.initialFocusedDay});
 
   @override
   State<CalendarHistoryScreen> createState() => _CalendarHistoryScreenState();
@@ -45,7 +42,7 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
     super.initState();
     _focusedDay = widget.initialFocusedDay ?? DateTime.now();
     _selectedDay = _focusedDay;
-    
+
     // Initial color assignment
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _assignColors();
@@ -70,7 +67,10 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
     final lastDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
 
     try {
-      final workouts = await workoutProvider.getWorkoutsInRange(firstDay, lastDay);
+      final workouts = await workoutProvider.getWorkoutsInRange(
+        firstDay,
+        lastDay,
+      );
       final newMap = <String, Set<String>>{};
 
       for (var workout in workouts) {
@@ -78,7 +78,7 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
         if (!newMap.containsKey(dateKey)) {
           newMap[dateKey] = {};
         }
-        
+
         // Collect bodyPartIds from workout items
         for (var item in workout.items) {
           if (item.bodyPartId.isNotEmpty) {
@@ -106,7 +106,7 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
 
     final dateKey = DateHelper.toDateKey(selectedDay);
     final workoutProvider = context.read<WorkoutProvider>();
-    
+
     // Show loading dialog
     showDialog(
       context: context,
@@ -120,7 +120,7 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
         Navigator.of(context).pop(); // Close dialog
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => WorkoutEditorScreen(workout: workout),
+            builder: (context) => WorkoutExerciseListScreen(workout: workout),
           ),
         );
         _loadMonthData(); // Reload on return
@@ -128,9 +128,9 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -145,10 +145,7 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('履歴'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('履歴'), centerTitle: true),
       body: Column(
         children: [
           // Filter Tabs
@@ -162,7 +159,7 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
               ],
             ),
           ),
-          
+
           const Divider(height: 1),
 
           // Calendar
@@ -189,7 +186,7 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
               },
               calendarStyle: const CalendarStyle(
                 todayDecoration: BoxDecoration(
-                  color: Colors.transparent, 
+                  color: Colors.transparent,
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: BoxDecoration(
@@ -200,14 +197,14 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
                   color: AppConstants.primaryColor,
                   fontWeight: FontWeight.bold,
                 ),
-                selectedTextStyle: TextStyle(
-                  color: Colors.black,
-                ),
+                selectedTextStyle: TextStyle(color: Colors.black),
               ),
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, date, focusedDay) => _buildCell(date),
-                todayBuilder: (context, date, focusedDay) => _buildCell(date, isToday: true),
-                selectedBuilder: (context, date, focusedDay) => _buildCell(date, isSelected: true),
+                todayBuilder: (context, date, focusedDay) =>
+                    _buildCell(date, isToday: true),
+                selectedBuilder: (context, date, focusedDay) =>
+                    _buildCell(date, isSelected: true),
               ),
             ),
           ),
@@ -220,8 +217,8 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
   Widget _buildFilterChip(String label, String? id) {
     // ... (Keep existing implementation, but ensure it's not deleted by overlap)
     final isSelected = _selectedBodyPartId == id;
-    final color = id == null 
-        ? AppConstants.primaryColor 
+    final color = id == null
+        ? AppConstants.primaryColor
         : (_bodyPartColors[id] ?? Colors.grey);
 
     return Padding(
@@ -255,7 +252,11 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
     );
   }
 
-  Widget? _buildCell(DateTime date, {bool isToday = false, bool isSelected = false}) {
+  Widget? _buildCell(
+    DateTime date, {
+    bool isToday = false,
+    bool isSelected = false,
+  }) {
     final dateKey = DateHelper.toDateKey(date);
     final parts = _dailyBodyParts[dateKey];
 
@@ -266,7 +267,9 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
           child: Container(
             margin: const EdgeInsets.all(6.0),
             decoration: BoxDecoration(
-              color: AppConstants.primaryColor.withOpacity(0.2), // Light purple for today
+              color: AppConstants.primaryColor.withOpacity(
+                0.2,
+              ), // Light purple for today
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -300,17 +303,23 @@ class _CalendarHistoryScreenState extends State<CalendarHistoryScreen> {
       child: Container(
         margin: const EdgeInsets.all(6.0),
         decoration: BoxDecoration(
-          color: color, 
+          color: color,
           shape: BoxShape.circle,
           // Add border for today if it has data
-          border: isToday 
-            ? Border.all(color: AppConstants.primaryColor.withOpacity(0.5), width: 2)
-            : null,
+          border: isToday
+              ? Border.all(
+                  color: AppConstants.primaryColor.withOpacity(0.5),
+                  width: 2,
+                )
+              : null,
         ),
         alignment: Alignment.center,
         child: Text(
           '${date.day}',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

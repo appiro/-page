@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/workout.dart';
 import '../models/workout_item.dart';
@@ -16,13 +17,14 @@ class WorkoutProvider with ChangeNotifier {
   Workout? _currentWorkout;
   bool _isLoading = false;
   String? _errorMessage;
+  StreamSubscription<List<Workout>>? _workoutsSubscription;
 
   WorkoutProvider({
     required FitRepository repository,
     required EconomyService economyService,
     required this.uid,
-  })  : _repository = repository,
-        _economyService = economyService {
+  }) : _repository = repository,
+       _economyService = economyService {
     _loadWorkouts();
   }
 
@@ -37,15 +39,19 @@ class WorkoutProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _repository.getWorkoutsStream(uid).listen(
-        (workouts) {
-          _workouts = workouts;
-          notifyListeners();
-        },
-        onError: (error) {
-          debugPrint('Workouts stream error: $error');
-        },
-      );
+      _workoutsSubscription = _repository
+          .getWorkoutsStream(uid)
+          .listen(
+            (workouts) {
+              if (!_isDisposed) {
+                _workouts = workouts;
+                notifyListeners();
+              }
+            },
+            onError: (error) {
+              debugPrint('Workouts stream error: $error');
+            },
+          );
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -53,6 +59,15 @@ class WorkoutProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  bool _isDisposed = false;
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _workoutsSubscription?.cancel();
+    super.dispose();
   }
 
   // Get or create today's workout
@@ -162,7 +177,11 @@ class WorkoutProvider with ChangeNotifier {
   }
 
   // Update set in exercise
-  Future<void> updateSet(int exerciseIndex, int setIndex, WorkoutSet set) async {
+  Future<void> updateSet(
+    int exerciseIndex,
+    int setIndex,
+    WorkoutSet set,
+  ) async {
     if (_currentWorkout == null) return;
 
     final item = _currentWorkout!.items[exerciseIndex];
@@ -184,37 +203,73 @@ class WorkoutProvider with ChangeNotifier {
   }
 
   // Complete workout and award coins
-  Future<void> completeWorkout() async {
-    if (_currentWorkout == null) return;
-    if (_currentWorkout!.coinGranted) return; // Already awarded
+  Future<int> completeWorkout({int? previousUniqueCount}) async {
+    // Keeping param name for compatibility, but it represents item count now
+    if (_currentWorkout == null) return 0;
+
+    // Calculate current item count (User requested to base on number of exercises, assuming total items)
+    final currentItemCount = _currentWorkout!.items.length;
+    int awardedTickets = 0;
 
     try {
-      // Calculate coins 
-      final coins = _economyService.calculateCoins(_currentWorkout!);
-      
-      if (coins > 0) {
-        await _economyService.awardCoins(uid, coins);
+      if (!_currentWorkout!.coinGranted) {
+        // --- First Time Completion ---
+
+        // Calculate coins
+        final coins = _economyService.calculateCoins(_currentWorkout!);
+
+        if (coins > 0) {
+          await _economyService.awardCoins(uid, coins);
+        }
+
+        // Award fishing tickets (1 per exercise item)
+        if (currentItemCount > 0) {
+          await _economyService.awardTickets(uid, currentItemCount);
+          awardedTickets = currentItemCount;
+        }
+
+        // Increment total workouts achievement
+        await _economyService.incrementAchievement(
+          uid,
+          AppConstants.achievementTotalWorkouts,
+        );
+
+        // Note: Title unlock check is handled by EconomyProvider.registerWorkoutCompletion()
+        // which has access to streak data needed for streak-based titles
+
+        // Mark workout as coin granted and completed
+        final updatedWorkout = _currentWorkout!.copyWith(
+          coinGranted: true,
+          isCompleted: true,
+        );
+        await updateCurrentWorkout(updatedWorkout);
+      } else if (previousUniqueCount != null) {
+        // --- Already Completed: Check for additional tickets ---
+        final diff = currentItemCount - previousUniqueCount;
+        if (diff > 0) {
+          await _economyService.awardTickets(uid, diff);
+          awardedTickets = diff;
+        }
+        // Ensure isCompleted is set even if coinGranted was already true
+        if (!_currentWorkout!.isCompleted) {
+          final updatedWorkout = _currentWorkout!.copyWith(isCompleted: true);
+          await updateCurrentWorkout(updatedWorkout);
+        }
       }
-
-      // Increment total workouts achievement
-      await _economyService.incrementAchievement(
-        uid,
-        AppConstants.achievementTotalWorkouts,
-      );
-
-      // Check for title unlocks
-      await _economyService.checkAndUnlockTitles(uid);
-
-      // Mark workout as coin granted
-      final updatedWorkout = _currentWorkout!.copyWith(coinGranted: true);
-      await updateCurrentWorkout(updatedWorkout);
     } catch (e) {
       debugPrint('Failed to complete workout: $e');
-      // Ensure local state is updated even if economy fails
-      final updatedWorkout = _currentWorkout!.copyWith(coinGranted: true);
-      _currentWorkout = updatedWorkout;
-      notifyListeners();
+      // Ensure local state is updated even if economy fails (only if not granted yet)
+      if (!_currentWorkout!.coinGranted) {
+        final updatedWorkout = _currentWorkout!.copyWith(
+          coinGranted: true,
+          isCompleted: true,
+        );
+        _currentWorkout = updatedWorkout;
+        notifyListeners();
+      }
     }
+
+    return awardedTickets;
   }
 
   // Delete workout

@@ -44,7 +44,10 @@ class LastRecordDisplay extends StatelessWidget {
                 icon: const Icon(Icons.copy, size: 16),
                 label: const Text('コピー'),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   minimumSize: const Size(0, 32),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -56,15 +59,23 @@ class LastRecordDisplay extends StatelessWidget {
             spacing: 8,
             runSpacing: 4,
             children: lastRecord.map((set) {
-              final weight = (set['weight'] as num).toDouble();
-              final reps = set['reps'] as int;
+              final weight = set['weight'] as num?;
+              final reps = set['reps'] as int?;
+              final duration = set['durationSec'] as int?;
               final assisted = set['assisted'] as bool? ?? false;
-              
+
+              String labelText;
+              if (duration != null && duration > 0) {
+                labelText = '${duration}秒${assisted ? ' (A)' : ''}';
+              } else {
+                final w = (weight ?? 0).toDouble();
+                final r = reps ?? 0;
+                labelText =
+                    '${w.toStringAsFixed(w.truncateToDouble() == w ? 0 : 1)}$unit × $r${assisted ? ' (A)' : ''}';
+              }
+
               return Chip(
-                label: Text(
-                  '${weight.toStringAsFixed(weight.truncateToDouble() == weight ? 0 : 1)}$unit × $reps${assisted ? ' (A)' : ''}',
-                  style: const TextStyle(fontSize: 12),
-                ),
+                label: Text(labelText, style: const TextStyle(fontSize: 12)),
                 backgroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

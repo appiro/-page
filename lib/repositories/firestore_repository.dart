@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/workout.dart';
 import '../models/body_part.dart';
 import '../models/exercise.dart';
+import '../models/exercise_measure_type.dart';
 import '../models/user_profile.dart';
 import '../models/economy_state.dart';
 import '../models/body_composition_entry.dart';
@@ -33,7 +35,8 @@ class FirestoreRepository implements FitRepository {
   Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
     try {
       data['updatedAt'] = Timestamp.now();
-      await _userDoc(uid).update(data);
+      // Use set with merge to create document if it doesn't exist
+      await _userDoc(uid).set(data, SetOptions(merge: true));
     } catch (e) {
       throw Exception('Failed to update user profile: ${e.toString()}');
     }
@@ -44,10 +47,10 @@ class FirestoreRepository implements FitRepository {
   @override
   Future<Workout> createWorkout(String uid, Workout workout) async {
     try {
-      final docRef = _userDoc(uid)
-          .collection(AppConstants.workoutsSubcollection)
-          .doc();
-      
+      final docRef = _userDoc(
+        uid,
+      ).collection(AppConstants.workoutsSubcollection).doc();
+
       final newWorkout = Workout(
         id: docRef.id,
         workoutDateKey: workout.workoutDateKey,
@@ -82,10 +85,9 @@ class FirestoreRepository implements FitRepository {
   @override
   Future<void> deleteWorkout(String uid, String workoutId) async {
     try {
-      await _userDoc(uid)
-          .collection(AppConstants.workoutsSubcollection)
-          .doc(workoutId)
-          .delete();
+      await _userDoc(
+        uid,
+      ).collection(AppConstants.workoutsSubcollection).doc(workoutId).delete();
     } catch (e) {
       throw Exception('Failed to delete workout: ${e.toString()}');
     }
@@ -94,11 +96,10 @@ class FirestoreRepository implements FitRepository {
   @override
   Future<Workout?> getWorkout(String uid, String workoutId) async {
     try {
-      final doc = await _userDoc(uid)
-          .collection(AppConstants.workoutsSubcollection)
-          .doc(workoutId)
-          .get();
-      
+      final doc = await _userDoc(
+        uid,
+      ).collection(AppConstants.workoutsSubcollection).doc(workoutId).get();
+
       if (!doc.exists) return null;
       return Workout.fromFirestore(doc);
     } catch (e) {
@@ -114,7 +115,7 @@ class FirestoreRepository implements FitRepository {
           .where('workoutDateKey', isEqualTo: dateKey)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isEmpty) return null;
       return Workout.fromFirestore(querySnapshot.docs.first);
     } catch (e) {
@@ -128,9 +129,10 @@ class FirestoreRepository implements FitRepository {
         .collection(AppConstants.workoutsSubcollection)
         .orderBy('workoutDateKey', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Workout.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList(),
+        );
   }
 
   @override
@@ -158,7 +160,10 @@ class FirestoreRepository implements FitRepository {
   }
 
   @override
-  Future<List<Workout>> getWorkoutsForWeek(String uid, List<String> dateKeys) async {
+  Future<List<Workout>> getWorkoutsForWeek(
+    String uid,
+    List<String> dateKeys,
+  ) async {
     try {
       final querySnapshot = await _userDoc(uid)
           .collection(AppConstants.workoutsSubcollection)
@@ -176,11 +181,14 @@ class FirestoreRepository implements FitRepository {
   @override
   Future<List<String>> getDistinctWorkoutTitles(String uid) async {
     // Firestore implementation stub
-    return []; 
+    return [];
   }
 
   @override
-  Future<List<Workout>> searchWorkoutsByTitle(String uid, String titleQuery) async {
+  Future<List<Workout>> searchWorkoutsByTitle(
+    String uid,
+    String titleQuery,
+  ) async {
     return [];
   }
 
@@ -206,15 +214,22 @@ class FirestoreRepository implements FitRepository {
       // Find the most recent workout containing this exercise
       for (var doc in querySnapshot.docs) {
         final workout = Workout.fromFirestore(doc);
-        final item = workout.items.where((i) => i.exerciseId == exerciseId).firstOrNull;
-        
+        final item = workout.items
+            .where((i) => i.exerciseId == exerciseId)
+            .firstOrNull;
+
         if (item != null) {
           // Return the sets from this exercise
-          return item.sets.map((set) => {
-            'weight': set.weight,
-            'reps': set.reps,
-            'assisted': set.assisted,
-          }).toList();
+          return item.sets
+              .map(
+                (set) => {
+                  'weight': set.weight,
+                  'reps': set.reps,
+                  'durationSec': set.durationSec,
+                  'assisted': set.assisted,
+                },
+              )
+              .toList();
         }
       }
 
@@ -235,7 +250,7 @@ class FirestoreRepository implements FitRepository {
       // Since 'items' is an array of objects, simple querying is hard.
       // We will query workouts ordered by date and client-side filter for now.
       // Limiting to 50 recent workouts to avoid massive reads.
-      
+
       final querySnapshot = await _userDoc(uid)
           .collection(AppConstants.workoutsSubcollection)
           .orderBy('workoutDateKey', descending: true)
@@ -246,16 +261,23 @@ class FirestoreRepository implements FitRepository {
 
       for (var doc in querySnapshot.docs) {
         final workout = Workout.fromFirestore(doc);
-        final item = workout.items.where((i) => i.exerciseId == exerciseId).firstOrNull;
-        
+        final item = workout.items
+            .where((i) => i.exerciseId == exerciseId)
+            .firstOrNull;
+
         if (item != null) {
           history.add({
-             'workoutDateKey': workout.workoutDateKey,
-             'sets': item.sets.map((set) => {
-               'weight': set.weight,
-               'reps': set.reps,
-               'assisted': set.assisted,
-             }).toList(),
+            'workoutDateKey': workout.workoutDateKey,
+            'sets': item.sets
+                .map(
+                  (set) => {
+                    'weight': set.weight,
+                    'reps': set.reps,
+                    'durationSec': set.durationSec,
+                    'assisted': set.assisted,
+                  },
+                )
+                .toList(),
           });
         }
       }
@@ -271,10 +293,10 @@ class FirestoreRepository implements FitRepository {
   @override
   Future<BodyPart> createBodyPart(String uid, String name, int order) async {
     try {
-      final docRef = _userDoc(uid)
-          .collection(AppConstants.bodyPartsSubcollection)
-          .doc();
-      
+      final docRef = _userDoc(
+        uid,
+      ).collection(AppConstants.bodyPartsSubcollection).doc();
+
       final bodyPart = BodyPart(
         id: docRef.id,
         name: name,
@@ -308,9 +330,10 @@ class FirestoreRepository implements FitRepository {
         .where('isArchived', isEqualTo: false)
         .orderBy('order')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => BodyPart.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => BodyPart.fromFirestore(doc)).toList(),
+        );
   }
 
   @override
@@ -320,10 +343,8 @@ class FirestoreRepository implements FitRepository {
           .collection(AppConstants.bodyPartsSubcollection)
           .where('isArchived', isEqualTo: false)
           .get();
-      
-      return snapshot.docs
-          .map((doc) => BodyPart.fromFirestore(doc))
-          .toList();
+
+      return snapshot.docs.map((doc) => BodyPart.fromFirestore(doc)).toList();
     } catch (e) {
       return [];
     }
@@ -336,19 +357,21 @@ class FirestoreRepository implements FitRepository {
     String uid,
     String name,
     String bodyPartId,
-    int order,
-  ) async {
+    int order, {
+    ExerciseMeasureType measureType = ExerciseMeasureType.weightReps,
+  }) async {
     try {
-      final docRef = _userDoc(uid)
-          .collection(AppConstants.exercisesSubcollection)
-          .doc();
-      
+      final docRef = _userDoc(
+        uid,
+      ).collection(AppConstants.exercisesSubcollection).doc();
+
       final exercise = Exercise(
         id: docRef.id,
         name: name,
         bodyPartId: bodyPartId,
         order: order,
         createdAt: DateTime.now(),
+        measureType: measureType,
       );
 
       await docRef.set(exercise.toFirestore());
@@ -378,19 +401,19 @@ class FirestoreRepository implements FitRepository {
         .orderBy('bodyPartId')
         .orderBy('order')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Exercise.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList(),
+        );
   }
 
   @override
   Future<Exercise?> getExercise(String uid, String exerciseId) async {
     try {
-      final doc = await _userDoc(uid)
-          .collection(AppConstants.exercisesSubcollection)
-          .doc(exerciseId)
-          .get();
-      
+      final doc = await _userDoc(
+        uid,
+      ).collection(AppConstants.exercisesSubcollection).doc(exerciseId).get();
+
       if (!doc.exists) return null;
       return Exercise.fromFirestore(doc);
     } catch (e) {
@@ -403,12 +426,45 @@ class FirestoreRepository implements FitRepository {
   @override
   Future<EconomyState> getEconomyState(String uid) async {
     try {
-      final doc = await _userDoc(uid)
-          .collection('economy')
-          .doc('state')
-          .get();
-      
-      return EconomyState.fromFirestore(doc);
+      final economyDocFuture = _userDoc(
+        uid,
+      ).collection('economy').doc('state').get();
+      final workoutsFuture = _userDoc(
+        uid,
+      ).collection(AppConstants.workoutsSubcollection).get();
+
+      final results = await Future.wait([economyDocFuture, workoutsFuture]);
+      final economyDoc = results[0] as DocumentSnapshot<Map<String, dynamic>>;
+      final workoutsSnapshot =
+          results[1] as QuerySnapshot<Map<String, dynamic>>;
+
+      EconomyState state;
+      if (economyDoc.exists) {
+        state = EconomyState.fromFirestore(economyDoc);
+      } else {
+        state = EconomyState(totalCoins: 0, achievementCounts: {});
+      }
+
+      int totalWorkouts = 0;
+      double totalVolume = 0;
+      double maxVolume = 0;
+
+      for (var doc in workoutsSnapshot.docs) {
+        final workout = Workout.fromFirestore(doc);
+        if (workout.isCompleted || workout.coinGranted) {
+          totalWorkouts++;
+          final vol = workout.totalVolume;
+          totalVolume += vol;
+          if (vol > maxVolume) maxVolume = vol;
+        }
+      }
+
+      final newCounts = Map<String, int>.from(state.achievementCounts);
+      newCounts['totalWorkouts'] = totalWorkouts;
+      newCounts['totalVolume'] = totalVolume.round();
+      newCounts['maxVolume'] = maxVolume.round();
+
+      return state.copyWith(achievementCounts: newCounts);
     } catch (e) {
       throw Exception('Failed to get economy state: ${e.toString()}');
     }
@@ -428,22 +484,95 @@ class FirestoreRepository implements FitRepository {
 
   @override
   Stream<EconomyState> getEconomyStateStream(String uid) {
-    return _userDoc(uid)
+    // Manually merge streams since we need calculated stats from workouts
+    final controller = StreamController<EconomyState>();
+
+    StreamSubscription? workoutsSub;
+    StreamSubscription? economySub;
+
+    EconomyState? lastEconomyState;
+    List<Workout>? lastWorkouts;
+
+    void emitUpdate() {
+      if (lastEconomyState == null) return; // Wait for economy state
+
+      final workouts = lastWorkouts ?? [];
+
+      int totalWorkouts = 0;
+      double totalVolume = 0;
+      double maxVolume = 0;
+
+      for (var workout in workouts) {
+        if (workout.isCompleted || workout.coinGranted) {
+          totalWorkouts++;
+          final vol = workout.totalVolume;
+          totalVolume += vol;
+          if (vol > maxVolume) maxVolume = vol;
+        }
+      }
+
+      // Update stats
+      final newCounts = Map<String, int>.from(
+        lastEconomyState!.achievementCounts,
+      );
+      newCounts['totalWorkouts'] = totalWorkouts;
+      newCounts['totalVolume'] = totalVolume.round();
+      newCounts['maxVolume'] = maxVolume.round();
+
+      if (!controller.isClosed) {
+        controller.add(
+          lastEconomyState!.copyWith(achievementCounts: newCounts),
+        );
+      }
+    }
+
+    // Subscribe to economy state
+    economySub = _userDoc(uid)
         .collection('economy')
         .doc('state')
         .snapshots()
-        .map((doc) => EconomyState.fromFirestore(doc));
+        .listen((snapshot) {
+          if (snapshot.exists) {
+            lastEconomyState = EconomyState.fromFirestore(snapshot);
+          } else {
+            lastEconomyState = EconomyState(
+              totalCoins: 0,
+              achievementCounts: {},
+            );
+          }
+          emitUpdate();
+        });
+
+    // Subscribe to workouts
+    workoutsSub = _userDoc(uid)
+        .collection(AppConstants.workoutsSubcollection)
+        .snapshots()
+        .listen((snapshot) {
+          lastWorkouts = snapshot.docs
+              .map((doc) => Workout.fromFirestore(doc))
+              .toList();
+          emitUpdate();
+        });
+
+    controller.onCancel = () {
+      workoutsSub?.cancel();
+      economySub?.cancel();
+    };
+
+    return controller.stream;
   }
 
   // ==================== Body Composition ====================
 
   @override
-  Future<void> saveBodyCompositionEntry(String uid, BodyCompositionEntry entry) async {
+  Future<void> saveBodyCompositionEntry(
+    String uid,
+    BodyCompositionEntry entry,
+  ) async {
     try {
-      await _userDoc(uid)
-          .collection('body_composition')
-          .doc(entry.id)
-          .set(entry.toFirestore());
+      await _userDoc(
+        uid,
+      ).collection('body_composition').doc(entry.id).set(entry.toFirestore());
     } catch (e) {
       throw Exception('Failed to save body composition entry: ${e.toString()}');
     }
@@ -452,12 +581,11 @@ class FirestoreRepository implements FitRepository {
   @override
   Future<void> deleteBodyCompositionEntry(String uid, String entryId) async {
     try {
-      await _userDoc(uid)
-          .collection('body_composition')
-          .doc(entryId)
-          .delete();
+      await _userDoc(uid).collection('body_composition').doc(entryId).delete();
     } catch (e) {
-      throw Exception('Failed to delete body composition entry: ${e.toString()}');
+      throw Exception(
+        'Failed to delete body composition entry: ${e.toString()}',
+      );
     }
   }
 
@@ -472,11 +600,13 @@ class FirestoreRepository implements FitRepository {
           .where('dateKey', isEqualTo: dateKey)
           .limit(1)
           .get();
-      
+
       if (querySnapshot.docs.isEmpty) return null;
       return BodyCompositionEntry.fromFirestore(querySnapshot.docs.first);
     } catch (e) {
-      throw Exception('Failed to get body composition by date: ${e.toString()}');
+      throw Exception(
+        'Failed to get body composition by date: ${e.toString()}',
+      );
     }
   }
 
@@ -501,12 +631,16 @@ class FirestoreRepository implements FitRepository {
           .map((doc) => BodyCompositionEntry.fromFirestore(doc))
           .toList();
     } catch (e) {
-      throw Exception('Failed to get body composition history: ${e.toString()}');
+      throw Exception(
+        'Failed to get body composition history: ${e.toString()}',
+      );
     }
   }
 
   @override
-  Future<List<BodyCompositionEntry>> getAllBodyCompositionEntries(String uid) async {
+  Future<List<BodyCompositionEntry>> getAllBodyCompositionEntries(
+    String uid,
+  ) async {
     return [];
   }
 
@@ -516,9 +650,11 @@ class FirestoreRepository implements FitRepository {
         .collection('body_composition')
         .orderBy('dateKey', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => BodyCompositionEntry.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => BodyCompositionEntry.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   // ==================== Helper Methods ====================

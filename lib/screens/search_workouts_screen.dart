@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/workout.dart';
 import '../providers/workout_provider.dart';
 import '../utils/date_helper.dart';
-import 'workout_editor_screen.dart';
+import 'workout_exercise_list_screen.dart';
 
 class SearchWorkoutsScreen extends StatefulWidget {
   const SearchWorkoutsScreen({super.key});
@@ -34,15 +34,17 @@ class _SearchWorkoutsScreenState extends State<SearchWorkoutsScreen> {
     });
 
     try {
-      final results = await context.read<WorkoutProvider>().searchWorkouts(query);
+      final results = await context.read<WorkoutProvider>().searchWorkouts(
+        query,
+      );
       setState(() {
         _results = results;
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('検索エラー: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('検索エラー: $e')));
       }
     } finally {
       if (mounted) {
@@ -59,13 +61,18 @@ class _SearchWorkoutsScreenState extends State<SearchWorkoutsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('ワークアウトのコピー'),
         content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-                Text('"${workout.title}" をコピーして、\n今日の記録として作成しますか？'),
-                const SizedBox(height: 8),
-                Text(DateHelper.formatDisplayDate(DateHelper.fromDateKey(workout.workoutDateKey)), style: const TextStyle(color: Colors.grey)),
-            ],
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('"${workout.title}" をコピーして、\n今日の記録として作成しますか？'),
+            const SizedBox(height: 8),
+            Text(
+              DateHelper.formatDisplayDate(
+                DateHelper.fromDateKey(workout.workoutDateKey),
+              ),
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -87,9 +94,7 @@ class _SearchWorkoutsScreenState extends State<SearchWorkoutsScreen> {
   void _copyToToday(Workout workout) {
     // Deep copy items to avoid reference issues
     final newItems = workout.items.map((item) {
-        return item.copyWith(
-            sets: item.sets.map((s) => s.copyWith()).toList(),
-        );
+      return item.copyWith(sets: item.sets.map((s) => s.copyWith()).toList());
     }).toList();
 
     final newWorkout = Workout(
@@ -106,7 +111,7 @@ class _SearchWorkoutsScreenState extends State<SearchWorkoutsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => WorkoutEditorScreen(workout: newWorkout),
+        builder: (_) => WorkoutExerciseListScreen(workout: newWorkout),
       ),
     );
   }
@@ -128,31 +133,35 @@ class _SearchWorkoutsScreenState extends State<SearchWorkoutsScreen> {
           autofocus: true,
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _performSearch,
-          ),
+          IconButton(icon: const Icon(Icons.search), onPressed: _performSearch),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _hasSearched && _results.isEmpty
-              ? const Center(child: Text('見つかりませんでした'))
-              : ListView.builder(
-                  itemCount: _results.length,
-                  itemBuilder: (context, index) {
-                    final workout = _results[index];
-                    return ListTile(
-                      title: Text(workout.title.isEmpty ? '名称未設定' : workout.title),
-                      subtitle: Text('${DateHelper.formatDisplayDate(DateHelper.fromDateKey(workout.workoutDateKey))} - ${workout.items.length} 種目'),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {
-                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('長押しでコピーできます'), duration: Duration(seconds: 1)));
-                      },
-                      onLongPress: () => _confirmCopyWorkout(workout),
+          ? const Center(child: Text('見つかりませんでした'))
+          : ListView.builder(
+              itemCount: _results.length,
+              itemBuilder: (context, index) {
+                final workout = _results[index];
+                return ListTile(
+                  title: Text(workout.title.isEmpty ? '名称未設定' : workout.title),
+                  subtitle: Text(
+                    '${DateHelper.formatDisplayDate(DateHelper.fromDateKey(workout.workoutDateKey))} - ${workout.items.length} 種目',
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('長押しでコピーできます'),
+                        duration: Duration(seconds: 1),
+                      ),
                     );
                   },
-                ),
+                  onLongPress: () => _confirmCopyWorkout(workout),
+                );
+              },
+            ),
     );
   }
 }

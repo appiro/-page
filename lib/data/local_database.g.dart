@@ -1143,16 +1143,18 @@ class WorkoutSetEntity extends DataClass
     implements Insertable<WorkoutSetEntity> {
   final String id;
   final String itemId;
-  final double weight;
-  final int reps;
+  final double? weight;
+  final int? reps;
+  final int? durationSec;
   final bool isWarmup;
   final bool isAssisted;
   final int index;
   const WorkoutSetEntity({
     required this.id,
     required this.itemId,
-    required this.weight,
-    required this.reps,
+    this.weight,
+    this.reps,
+    this.durationSec,
     required this.isWarmup,
     required this.isAssisted,
     required this.index,
@@ -1162,8 +1164,15 @@ class WorkoutSetEntity extends DataClass
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['item_id'] = Variable<String>(itemId);
-    map['weight'] = Variable<double>(weight);
-    map['reps'] = Variable<int>(reps);
+    if (!nullToAbsent || weight != null) {
+      map['weight'] = Variable<double>(weight);
+    }
+    if (!nullToAbsent || reps != null) {
+      map['reps'] = Variable<int>(reps);
+    }
+    if (!nullToAbsent || durationSec != null) {
+      map['durationSec'] = Variable<int>(durationSec);
+    }
     map['is_warmup'] = Variable<bool>(isWarmup);
     map['is_assisted'] = Variable<bool>(isAssisted);
     map['index'] = Variable<int>(index);
@@ -1174,8 +1183,13 @@ class WorkoutSetEntity extends DataClass
     return WorkoutSetsCompanion(
       id: Value(id),
       itemId: Value(itemId),
-      weight: Value(weight),
-      reps: Value(reps),
+      weight: weight == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weight),
+      reps: reps == null && nullToAbsent ? const Value.absent() : Value(reps),
+      durationSec: durationSec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationSec),
       isWarmup: Value(isWarmup),
       isAssisted: Value(isAssisted),
       index: Value(index),
@@ -1190,8 +1204,9 @@ class WorkoutSetEntity extends DataClass
     return WorkoutSetEntity(
       id: serializer.fromJson<String>(json['id']),
       itemId: serializer.fromJson<String>(json['itemId']),
-      weight: serializer.fromJson<double>(json['weight']),
-      reps: serializer.fromJson<int>(json['reps']),
+      weight: serializer.fromJson<double?>(json['weight']),
+      reps: serializer.fromJson<int?>(json['reps']),
+      durationSec: serializer.fromJson<int?>(json['durationSec']),
       isWarmup: serializer.fromJson<bool>(json['isWarmup']),
       isAssisted: serializer.fromJson<bool>(json['isAssisted']),
       index: serializer.fromJson<int>(json['index']),
@@ -1203,8 +1218,9 @@ class WorkoutSetEntity extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'itemId': serializer.toJson<String>(itemId),
-      'weight': serializer.toJson<double>(weight),
-      'reps': serializer.toJson<int>(reps),
+      'weight': serializer.toJson<double?>(weight),
+      'reps': serializer.toJson<int?>(reps),
+      'durationSec': serializer.toJson<int?>(durationSec),
       'isWarmup': serializer.toJson<bool>(isWarmup),
       'isAssisted': serializer.toJson<bool>(isAssisted),
       'index': serializer.toJson<int>(index),
@@ -1214,16 +1230,18 @@ class WorkoutSetEntity extends DataClass
   WorkoutSetEntity copyWith({
     String? id,
     String? itemId,
-    double? weight,
-    int? reps,
+    Value<double?> weight = const Value.absent(),
+    Value<int?> reps = const Value.absent(),
+    Value<int?> durationSec = const Value.absent(),
     bool? isWarmup,
     bool? isAssisted,
     int? index,
   }) => WorkoutSetEntity(
     id: id ?? this.id,
     itemId: itemId ?? this.itemId,
-    weight: weight ?? this.weight,
-    reps: reps ?? this.reps,
+    weight: weight.present ? weight.value : this.weight,
+    reps: reps.present ? reps.value : this.reps,
+    durationSec: durationSec.present ? durationSec.value : this.durationSec,
     isWarmup: isWarmup ?? this.isWarmup,
     isAssisted: isAssisted ?? this.isAssisted,
     index: index ?? this.index,
@@ -1234,6 +1252,9 @@ class WorkoutSetEntity extends DataClass
       itemId: data.itemId.present ? data.itemId.value : this.itemId,
       weight: data.weight.present ? data.weight.value : this.weight,
       reps: data.reps.present ? data.reps.value : this.reps,
+      durationSec: data.durationSec.present
+          ? data.durationSec.value
+          : this.durationSec,
       isWarmup: data.isWarmup.present ? data.isWarmup.value : this.isWarmup,
       isAssisted: data.isAssisted.present
           ? data.isAssisted.value
@@ -1249,6 +1270,7 @@ class WorkoutSetEntity extends DataClass
           ..write('itemId: $itemId, ')
           ..write('weight: $weight, ')
           ..write('reps: $reps, ')
+          ..write('durationSec: $durationSec, ')
           ..write('isWarmup: $isWarmup, ')
           ..write('isAssisted: $isAssisted, ')
           ..write('index: $index')
@@ -1257,8 +1279,16 @@ class WorkoutSetEntity extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, itemId, weight, reps, isWarmup, isAssisted, index);
+  int get hashCode => Object.hash(
+    id,
+    itemId,
+    weight,
+    reps,
+    durationSec,
+    isWarmup,
+    isAssisted,
+    index,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1267,6 +1297,7 @@ class WorkoutSetEntity extends DataClass
           other.itemId == this.itemId &&
           other.weight == this.weight &&
           other.reps == this.reps &&
+          other.durationSec == this.durationSec &&
           other.isWarmup == this.isWarmup &&
           other.isAssisted == this.isAssisted &&
           other.index == this.index);
@@ -1275,8 +1306,9 @@ class WorkoutSetEntity extends DataClass
 class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
   final Value<String> id;
   final Value<String> itemId;
-  final Value<double> weight;
-  final Value<int> reps;
+  final Value<double?> weight;
+  final Value<int?> reps;
+  final Value<int?> durationSec;
   final Value<bool> isWarmup;
   final Value<bool> isAssisted;
   final Value<int> index;
@@ -1286,6 +1318,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
     this.itemId = const Value.absent(),
     this.weight = const Value.absent(),
     this.reps = const Value.absent(),
+    this.durationSec = const Value.absent(),
     this.isWarmup = const Value.absent(),
     this.isAssisted = const Value.absent(),
     this.index = const Value.absent(),
@@ -1294,22 +1327,22 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
   WorkoutSetsCompanion.insert({
     required String id,
     required String itemId,
-    required double weight,
-    required int reps,
+    this.weight = const Value.absent(),
+    this.reps = const Value.absent(),
+    this.durationSec = const Value.absent(),
     this.isWarmup = const Value.absent(),
     this.isAssisted = const Value.absent(),
     required int index,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        itemId = Value(itemId),
-       weight = Value(weight),
-       reps = Value(reps),
        index = Value(index);
   static Insertable<WorkoutSetEntity> custom({
     Expression<String>? id,
     Expression<String>? itemId,
     Expression<double>? weight,
     Expression<int>? reps,
+    Expression<int>? durationSec,
     Expression<bool>? isWarmup,
     Expression<bool>? isAssisted,
     Expression<int>? index,
@@ -1320,6 +1353,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
       if (itemId != null) 'item_id': itemId,
       if (weight != null) 'weight': weight,
       if (reps != null) 'reps': reps,
+      if (durationSec != null) 'durationSec': durationSec,
       if (isWarmup != null) 'is_warmup': isWarmup,
       if (isAssisted != null) 'is_assisted': isAssisted,
       if (index != null) 'index': index,
@@ -1330,8 +1364,9 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
   WorkoutSetsCompanion copyWith({
     Value<String>? id,
     Value<String>? itemId,
-    Value<double>? weight,
-    Value<int>? reps,
+    Value<double?>? weight,
+    Value<int?>? reps,
+    Value<int?>? durationSec,
     Value<bool>? isWarmup,
     Value<bool>? isAssisted,
     Value<int>? index,
@@ -1342,6 +1377,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
       itemId: itemId ?? this.itemId,
       weight: weight ?? this.weight,
       reps: reps ?? this.reps,
+      durationSec: durationSec ?? this.durationSec,
       isWarmup: isWarmup ?? this.isWarmup,
       isAssisted: isAssisted ?? this.isAssisted,
       index: index ?? this.index,
@@ -1363,6 +1399,9 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
     }
     if (reps.present) {
       map['reps'] = Variable<int>(reps.value);
+    }
+    if (durationSec.present) {
+      map['durationSec'] = Variable<int>(durationSec.value);
     }
     if (isWarmup.present) {
       map['is_warmup'] = Variable<bool>(isWarmup.value);
@@ -1386,6 +1425,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
           ..write('itemId: $itemId, ')
           ..write('weight: $weight, ')
           ..write('reps: $reps, ')
+          ..write('durationSec: $durationSec, ')
           ..write('isWarmup: $isWarmup, ')
           ..write('isAssisted: $isAssisted, ')
           ..write('index: $index, ')
@@ -1834,6 +1874,18 @@ class $LocalExercisesTable extends LocalExercises
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _measureTypeMeta = const VerificationMeta(
+    'measureType',
+  );
+  @override
+  late final GeneratedColumn<String> measureType = GeneratedColumn<String>(
+    'measure_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('weightReps'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1842,6 +1894,7 @@ class $LocalExercisesTable extends LocalExercises
     orderIndex,
     isArchived,
     createdAt,
+    measureType,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1899,6 +1952,15 @@ class $LocalExercisesTable extends LocalExercises
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('measure_type')) {
+      context.handle(
+        _measureTypeMeta,
+        measureType.isAcceptableOrUnknown(
+          data['measure_type']!,
+          _measureTypeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1932,6 +1994,10 @@ class $LocalExercisesTable extends LocalExercises
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       ),
+      measureType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}measure_type'],
+      )!,
     );
   }
 
@@ -1949,6 +2015,7 @@ class LocalExerciseEntity extends DataClass
   final int orderIndex;
   final bool isArchived;
   final DateTime? createdAt;
+  final String measureType;
   const LocalExerciseEntity({
     required this.id,
     required this.name,
@@ -1956,6 +2023,7 @@ class LocalExerciseEntity extends DataClass
     required this.orderIndex,
     required this.isArchived,
     this.createdAt,
+    required this.measureType,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1968,6 +2036,7 @@ class LocalExerciseEntity extends DataClass
     if (!nullToAbsent || createdAt != null) {
       map['created_at'] = Variable<DateTime>(createdAt);
     }
+    map['measure_type'] = Variable<String>(measureType);
     return map;
   }
 
@@ -1981,6 +2050,7 @@ class LocalExerciseEntity extends DataClass
       createdAt: createdAt == null && nullToAbsent
           ? const Value.absent()
           : Value(createdAt),
+      measureType: Value(measureType),
     );
   }
 
@@ -1996,6 +2066,7 @@ class LocalExerciseEntity extends DataClass
       orderIndex: serializer.fromJson<int>(json['orderIndex']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
       createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
+      measureType: serializer.fromJson<String>(json['measureType']),
     );
   }
   @override
@@ -2008,6 +2079,7 @@ class LocalExerciseEntity extends DataClass
       'orderIndex': serializer.toJson<int>(orderIndex),
       'isArchived': serializer.toJson<bool>(isArchived),
       'createdAt': serializer.toJson<DateTime?>(createdAt),
+      'measureType': serializer.toJson<String>(measureType),
     };
   }
 
@@ -2018,6 +2090,7 @@ class LocalExerciseEntity extends DataClass
     int? orderIndex,
     bool? isArchived,
     Value<DateTime?> createdAt = const Value.absent(),
+    String? measureType,
   }) => LocalExerciseEntity(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -2025,6 +2098,7 @@ class LocalExerciseEntity extends DataClass
     orderIndex: orderIndex ?? this.orderIndex,
     isArchived: isArchived ?? this.isArchived,
     createdAt: createdAt.present ? createdAt.value : this.createdAt,
+    measureType: measureType ?? this.measureType,
   );
   LocalExerciseEntity copyWithCompanion(LocalExercisesCompanion data) {
     return LocalExerciseEntity(
@@ -2040,6 +2114,9 @@ class LocalExerciseEntity extends DataClass
           ? data.isArchived.value
           : this.isArchived,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      measureType: data.measureType.present
+          ? data.measureType.value
+          : this.measureType,
     );
   }
 
@@ -2057,8 +2134,15 @@ class LocalExerciseEntity extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, bodyPartId, orderIndex, isArchived, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    bodyPartId,
+    orderIndex,
+    isArchived,
+    createdAt,
+    measureType,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2068,7 +2152,8 @@ class LocalExerciseEntity extends DataClass
           other.bodyPartId == this.bodyPartId &&
           other.orderIndex == this.orderIndex &&
           other.isArchived == this.isArchived &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.measureType == this.measureType);
 }
 
 class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
@@ -2078,6 +2163,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
   final Value<int> orderIndex;
   final Value<bool> isArchived;
   final Value<DateTime?> createdAt;
+  final Value<String> measureType;
   final Value<int> rowid;
   const LocalExercisesCompanion({
     this.id = const Value.absent(),
@@ -2086,6 +2172,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
     this.orderIndex = const Value.absent(),
     this.isArchived = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.measureType = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LocalExercisesCompanion.insert({
@@ -2095,6 +2182,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
     required int orderIndex,
     this.isArchived = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.measureType = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -2107,6 +2195,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
     Expression<int>? orderIndex,
     Expression<bool>? isArchived,
     Expression<DateTime>? createdAt,
+    Expression<String>? measureType,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2127,6 +2216,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
     Value<int>? orderIndex,
     Value<bool>? isArchived,
     Value<DateTime?>? createdAt,
+    Value<String>? measureType,
     Value<int>? rowid,
   }) {
     return LocalExercisesCompanion(
@@ -2136,6 +2226,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
       orderIndex: orderIndex ?? this.orderIndex,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
+      measureType: measureType ?? this.measureType,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2161,6 +2252,9 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (measureType.present) {
+      map['measure_type'] = Variable<String>(measureType.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2176,6 +2270,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
           ..write('orderIndex: $orderIndex, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt, ')
+          ..write('measureType: $measureType, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2209,8 +2304,36 @@ class $LocalEconomyStateTable extends LocalEconomyState
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _fishingTicketsMeta = const VerificationMeta(
+    'fishingTickets',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, totalCoins];
+  late final GeneratedColumn<int> fishingTickets = GeneratedColumn<int>(
+    'fishing_tickets',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _equippedTitleIdMeta = const VerificationMeta(
+    'equippedTitleId',
+  );
+  @override
+  late final GeneratedColumn<String> equippedTitleId = GeneratedColumn<String>(
+    'equipped_title_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    totalCoins,
+    fishingTickets,
+    equippedTitleId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2234,6 +2357,24 @@ class $LocalEconomyStateTable extends LocalEconomyState
         totalCoins.isAcceptableOrUnknown(data['total_coins']!, _totalCoinsMeta),
       );
     }
+    if (data.containsKey('fishing_tickets')) {
+      context.handle(
+        _fishingTicketsMeta,
+        fishingTickets.isAcceptableOrUnknown(
+          data['fishing_tickets']!,
+          _fishingTicketsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('equipped_title_id')) {
+      context.handle(
+        _equippedTitleIdMeta,
+        equippedTitleId.isAcceptableOrUnknown(
+          data['equipped_title_id']!,
+          _equippedTitleIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2254,6 +2395,14 @@ class $LocalEconomyStateTable extends LocalEconomyState
         DriftSqlType.int,
         data['${effectivePrefix}total_coins'],
       )!,
+      fishingTickets: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fishing_tickets'],
+      )!,
+      equippedTitleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}equipped_title_id'],
+      ),
     );
   }
 
@@ -2267,12 +2416,23 @@ class LocalEconomyStateEntity extends DataClass
     implements Insertable<LocalEconomyStateEntity> {
   final String id;
   final int totalCoins;
-  const LocalEconomyStateEntity({required this.id, required this.totalCoins});
+  final int fishingTickets;
+  final String? equippedTitleId;
+  const LocalEconomyStateEntity({
+    required this.id,
+    required this.totalCoins,
+    required this.fishingTickets,
+    this.equippedTitleId,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['total_coins'] = Variable<int>(totalCoins);
+    map['fishing_tickets'] = Variable<int>(fishingTickets);
+    if (!nullToAbsent || equippedTitleId != null) {
+      map['equipped_title_id'] = Variable<String>(equippedTitleId);
+    }
     return map;
   }
 
@@ -2280,6 +2440,10 @@ class LocalEconomyStateEntity extends DataClass
     return LocalEconomyStateCompanion(
       id: Value(id),
       totalCoins: Value(totalCoins),
+      fishingTickets: Value(fishingTickets),
+      equippedTitleId: equippedTitleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(equippedTitleId),
     );
   }
 
@@ -2291,6 +2455,8 @@ class LocalEconomyStateEntity extends DataClass
     return LocalEconomyStateEntity(
       id: serializer.fromJson<String>(json['id']),
       totalCoins: serializer.fromJson<int>(json['totalCoins']),
+      fishingTickets: serializer.fromJson<int>(json['fishingTickets']),
+      equippedTitleId: serializer.fromJson<String?>(json['equippedTitleId']),
     );
   }
   @override
@@ -2299,20 +2465,36 @@ class LocalEconomyStateEntity extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'totalCoins': serializer.toJson<int>(totalCoins),
+      'fishingTickets': serializer.toJson<int>(fishingTickets),
+      'equippedTitleId': serializer.toJson<String?>(equippedTitleId),
     };
   }
 
-  LocalEconomyStateEntity copyWith({String? id, int? totalCoins}) =>
-      LocalEconomyStateEntity(
-        id: id ?? this.id,
-        totalCoins: totalCoins ?? this.totalCoins,
-      );
+  LocalEconomyStateEntity copyWith({
+    String? id,
+    int? totalCoins,
+    int? fishingTickets,
+    Value<String?> equippedTitleId = const Value.absent(),
+  }) => LocalEconomyStateEntity(
+    id: id ?? this.id,
+    totalCoins: totalCoins ?? this.totalCoins,
+    fishingTickets: fishingTickets ?? this.fishingTickets,
+    equippedTitleId: equippedTitleId.present
+        ? equippedTitleId.value
+        : this.equippedTitleId,
+  );
   LocalEconomyStateEntity copyWithCompanion(LocalEconomyStateCompanion data) {
     return LocalEconomyStateEntity(
       id: data.id.present ? data.id.value : this.id,
       totalCoins: data.totalCoins.present
           ? data.totalCoins.value
           : this.totalCoins,
+      fishingTickets: data.fishingTickets.present
+          ? data.fishingTickets.value
+          : this.fishingTickets,
+      equippedTitleId: data.equippedTitleId.present
+          ? data.equippedTitleId.value
+          : this.equippedTitleId,
     );
   }
 
@@ -2320,44 +2502,59 @@ class LocalEconomyStateEntity extends DataClass
   String toString() {
     return (StringBuffer('LocalEconomyStateEntity(')
           ..write('id: $id, ')
-          ..write('totalCoins: $totalCoins')
+          ..write('totalCoins: $totalCoins, ')
+          ..write('fishingTickets: $fishingTickets, ')
+          ..write('equippedTitleId: $equippedTitleId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, totalCoins);
+  int get hashCode =>
+      Object.hash(id, totalCoins, fishingTickets, equippedTitleId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is LocalEconomyStateEntity &&
           other.id == this.id &&
-          other.totalCoins == this.totalCoins);
+          other.totalCoins == this.totalCoins &&
+          other.fishingTickets == this.fishingTickets &&
+          other.equippedTitleId == this.equippedTitleId);
 }
 
 class LocalEconomyStateCompanion
     extends UpdateCompanion<LocalEconomyStateEntity> {
   final Value<String> id;
   final Value<int> totalCoins;
+  final Value<int> fishingTickets;
+  final Value<String?> equippedTitleId;
   final Value<int> rowid;
   const LocalEconomyStateCompanion({
     this.id = const Value.absent(),
     this.totalCoins = const Value.absent(),
+    this.fishingTickets = const Value.absent(),
+    this.equippedTitleId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LocalEconomyStateCompanion.insert({
     required String id,
     this.totalCoins = const Value.absent(),
+    this.fishingTickets = const Value.absent(),
+    this.equippedTitleId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
   static Insertable<LocalEconomyStateEntity> custom({
     Expression<String>? id,
     Expression<int>? totalCoins,
+    Expression<int>? fishingTickets,
+    Expression<String>? equippedTitleId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (totalCoins != null) 'total_coins': totalCoins,
+      if (fishingTickets != null) 'fishing_tickets': fishingTickets,
+      if (equippedTitleId != null) 'equipped_title_id': equippedTitleId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2365,11 +2562,15 @@ class LocalEconomyStateCompanion
   LocalEconomyStateCompanion copyWith({
     Value<String>? id,
     Value<int>? totalCoins,
+    Value<int>? fishingTickets,
+    Value<String?>? equippedTitleId,
     Value<int>? rowid,
   }) {
     return LocalEconomyStateCompanion(
       id: id ?? this.id,
       totalCoins: totalCoins ?? this.totalCoins,
+      fishingTickets: fishingTickets ?? this.fishingTickets,
+      equippedTitleId: equippedTitleId ?? this.equippedTitleId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2383,6 +2584,12 @@ class LocalEconomyStateCompanion
     if (totalCoins.present) {
       map['total_coins'] = Variable<int>(totalCoins.value);
     }
+    if (fishingTickets.present) {
+      map['fishing_tickets'] = Variable<int>(fishingTickets.value);
+    }
+    if (equippedTitleId.present) {
+      map['equipped_title_id'] = Variable<String>(equippedTitleId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2394,6 +2601,823 @@ class LocalEconomyStateCompanion
     return (StringBuffer('LocalEconomyStateCompanion(')
           ..write('id: $id, ')
           ..write('totalCoins: $totalCoins, ')
+          ..write('fishingTickets: $fishingTickets, ')
+          ..write('equippedTitleId: $equippedTitleId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalAchievementsTable extends LocalAchievements
+    with TableInfo<$LocalAchievementsTable, LocalAchievementEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalAchievementsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _achievementKeyMeta = const VerificationMeta(
+    'achievementKey',
+  );
+  @override
+  late final GeneratedColumn<String> achievementKey = GeneratedColumn<String>(
+    'achievement_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [achievementKey, count];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_achievements';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalAchievementEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('achievement_key')) {
+      context.handle(
+        _achievementKeyMeta,
+        achievementKey.isAcceptableOrUnknown(
+          data['achievement_key']!,
+          _achievementKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_achievementKeyMeta);
+    }
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {achievementKey};
+  @override
+  LocalAchievementEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalAchievementEntity(
+      achievementKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}achievement_key'],
+      )!,
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalAchievementsTable createAlias(String alias) {
+    return $LocalAchievementsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalAchievementEntity extends DataClass
+    implements Insertable<LocalAchievementEntity> {
+  final String achievementKey;
+  final int count;
+  const LocalAchievementEntity({
+    required this.achievementKey,
+    required this.count,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['achievement_key'] = Variable<String>(achievementKey);
+    map['count'] = Variable<int>(count);
+    return map;
+  }
+
+  LocalAchievementsCompanion toCompanion(bool nullToAbsent) {
+    return LocalAchievementsCompanion(
+      achievementKey: Value(achievementKey),
+      count: Value(count),
+    );
+  }
+
+  factory LocalAchievementEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalAchievementEntity(
+      achievementKey: serializer.fromJson<String>(json['achievementKey']),
+      count: serializer.fromJson<int>(json['count']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'achievementKey': serializer.toJson<String>(achievementKey),
+      'count': serializer.toJson<int>(count),
+    };
+  }
+
+  LocalAchievementEntity copyWith({String? achievementKey, int? count}) =>
+      LocalAchievementEntity(
+        achievementKey: achievementKey ?? this.achievementKey,
+        count: count ?? this.count,
+      );
+  LocalAchievementEntity copyWithCompanion(LocalAchievementsCompanion data) {
+    return LocalAchievementEntity(
+      achievementKey: data.achievementKey.present
+          ? data.achievementKey.value
+          : this.achievementKey,
+      count: data.count.present ? data.count.value : this.count,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalAchievementEntity(')
+          ..write('achievementKey: $achievementKey, ')
+          ..write('count: $count')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(achievementKey, count);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalAchievementEntity &&
+          other.achievementKey == this.achievementKey &&
+          other.count == this.count);
+}
+
+class LocalAchievementsCompanion
+    extends UpdateCompanion<LocalAchievementEntity> {
+  final Value<String> achievementKey;
+  final Value<int> count;
+  final Value<int> rowid;
+  const LocalAchievementsCompanion({
+    this.achievementKey = const Value.absent(),
+    this.count = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalAchievementsCompanion.insert({
+    required String achievementKey,
+    this.count = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : achievementKey = Value(achievementKey);
+  static Insertable<LocalAchievementEntity> custom({
+    Expression<String>? achievementKey,
+    Expression<int>? count,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (achievementKey != null) 'achievement_key': achievementKey,
+      if (count != null) 'count': count,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalAchievementsCompanion copyWith({
+    Value<String>? achievementKey,
+    Value<int>? count,
+    Value<int>? rowid,
+  }) {
+    return LocalAchievementsCompanion(
+      achievementKey: achievementKey ?? this.achievementKey,
+      count: count ?? this.count,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (achievementKey.present) {
+      map['achievement_key'] = Variable<String>(achievementKey.value);
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalAchievementsCompanion(')
+          ..write('achievementKey: $achievementKey, ')
+          ..write('count: $count, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalInventoryTable extends LocalInventory
+    with TableInfo<$LocalInventoryTable, LocalInventoryEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalInventoryTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _remainingUsesMeta = const VerificationMeta(
+    'remainingUses',
+  );
+  @override
+  late final GeneratedColumn<int> remainingUses = GeneratedColumn<int>(
+    'remaining_uses',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _acquiredAtMeta = const VerificationMeta(
+    'acquiredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> acquiredAt = GeneratedColumn<DateTime>(
+    'acquired_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isEquippedMeta = const VerificationMeta(
+    'isEquipped',
+  );
+  @override
+  late final GeneratedColumn<bool> isEquipped = GeneratedColumn<bool>(
+    'is_equipped',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_equipped" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    itemId,
+    remainingUses,
+    acquiredAt,
+    isEquipped,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_inventory';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalInventoryEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('remaining_uses')) {
+      context.handle(
+        _remainingUsesMeta,
+        remainingUses.isAcceptableOrUnknown(
+          data['remaining_uses']!,
+          _remainingUsesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_remainingUsesMeta);
+    }
+    if (data.containsKey('acquired_at')) {
+      context.handle(
+        _acquiredAtMeta,
+        acquiredAt.isAcceptableOrUnknown(data['acquired_at']!, _acquiredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_acquiredAtMeta);
+    }
+    if (data.containsKey('is_equipped')) {
+      context.handle(
+        _isEquippedMeta,
+        isEquipped.isAcceptableOrUnknown(data['is_equipped']!, _isEquippedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalInventoryEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalInventoryEntity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      remainingUses: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}remaining_uses'],
+      )!,
+      acquiredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}acquired_at'],
+      )!,
+      isEquipped: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_equipped'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalInventoryTable createAlias(String alias) {
+    return $LocalInventoryTable(attachedDatabase, alias);
+  }
+}
+
+class LocalInventoryEntity extends DataClass
+    implements Insertable<LocalInventoryEntity> {
+  final String id;
+  final String itemId;
+  final int remainingUses;
+  final DateTime acquiredAt;
+  final bool isEquipped;
+  const LocalInventoryEntity({
+    required this.id,
+    required this.itemId,
+    required this.remainingUses,
+    required this.acquiredAt,
+    required this.isEquipped,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['item_id'] = Variable<String>(itemId);
+    map['remaining_uses'] = Variable<int>(remainingUses);
+    map['acquired_at'] = Variable<DateTime>(acquiredAt);
+    map['is_equipped'] = Variable<bool>(isEquipped);
+    return map;
+  }
+
+  LocalInventoryCompanion toCompanion(bool nullToAbsent) {
+    return LocalInventoryCompanion(
+      id: Value(id),
+      itemId: Value(itemId),
+      remainingUses: Value(remainingUses),
+      acquiredAt: Value(acquiredAt),
+      isEquipped: Value(isEquipped),
+    );
+  }
+
+  factory LocalInventoryEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalInventoryEntity(
+      id: serializer.fromJson<String>(json['id']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      remainingUses: serializer.fromJson<int>(json['remainingUses']),
+      acquiredAt: serializer.fromJson<DateTime>(json['acquiredAt']),
+      isEquipped: serializer.fromJson<bool>(json['isEquipped']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'itemId': serializer.toJson<String>(itemId),
+      'remainingUses': serializer.toJson<int>(remainingUses),
+      'acquiredAt': serializer.toJson<DateTime>(acquiredAt),
+      'isEquipped': serializer.toJson<bool>(isEquipped),
+    };
+  }
+
+  LocalInventoryEntity copyWith({
+    String? id,
+    String? itemId,
+    int? remainingUses,
+    DateTime? acquiredAt,
+    bool? isEquipped,
+  }) => LocalInventoryEntity(
+    id: id ?? this.id,
+    itemId: itemId ?? this.itemId,
+    remainingUses: remainingUses ?? this.remainingUses,
+    acquiredAt: acquiredAt ?? this.acquiredAt,
+    isEquipped: isEquipped ?? this.isEquipped,
+  );
+  LocalInventoryEntity copyWithCompanion(LocalInventoryCompanion data) {
+    return LocalInventoryEntity(
+      id: data.id.present ? data.id.value : this.id,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      remainingUses: data.remainingUses.present
+          ? data.remainingUses.value
+          : this.remainingUses,
+      acquiredAt: data.acquiredAt.present
+          ? data.acquiredAt.value
+          : this.acquiredAt,
+      isEquipped: data.isEquipped.present
+          ? data.isEquipped.value
+          : this.isEquipped,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalInventoryEntity(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('remainingUses: $remainingUses, ')
+          ..write('acquiredAt: $acquiredAt, ')
+          ..write('isEquipped: $isEquipped')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, itemId, remainingUses, acquiredAt, isEquipped);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalInventoryEntity &&
+          other.id == this.id &&
+          other.itemId == this.itemId &&
+          other.remainingUses == this.remainingUses &&
+          other.acquiredAt == this.acquiredAt &&
+          other.isEquipped == this.isEquipped);
+}
+
+class LocalInventoryCompanion extends UpdateCompanion<LocalInventoryEntity> {
+  final Value<String> id;
+  final Value<String> itemId;
+  final Value<int> remainingUses;
+  final Value<DateTime> acquiredAt;
+  final Value<bool> isEquipped;
+  final Value<int> rowid;
+  const LocalInventoryCompanion({
+    this.id = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.remainingUses = const Value.absent(),
+    this.acquiredAt = const Value.absent(),
+    this.isEquipped = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalInventoryCompanion.insert({
+    required String id,
+    required String itemId,
+    required int remainingUses,
+    required DateTime acquiredAt,
+    this.isEquipped = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       itemId = Value(itemId),
+       remainingUses = Value(remainingUses),
+       acquiredAt = Value(acquiredAt);
+  static Insertable<LocalInventoryEntity> custom({
+    Expression<String>? id,
+    Expression<String>? itemId,
+    Expression<int>? remainingUses,
+    Expression<DateTime>? acquiredAt,
+    Expression<bool>? isEquipped,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (itemId != null) 'item_id': itemId,
+      if (remainingUses != null) 'remaining_uses': remainingUses,
+      if (acquiredAt != null) 'acquired_at': acquiredAt,
+      if (isEquipped != null) 'is_equipped': isEquipped,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalInventoryCompanion copyWith({
+    Value<String>? id,
+    Value<String>? itemId,
+    Value<int>? remainingUses,
+    Value<DateTime>? acquiredAt,
+    Value<bool>? isEquipped,
+    Value<int>? rowid,
+  }) {
+    return LocalInventoryCompanion(
+      id: id ?? this.id,
+      itemId: itemId ?? this.itemId,
+      remainingUses: remainingUses ?? this.remainingUses,
+      acquiredAt: acquiredAt ?? this.acquiredAt,
+      isEquipped: isEquipped ?? this.isEquipped,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (remainingUses.present) {
+      map['remaining_uses'] = Variable<int>(remainingUses.value);
+    }
+    if (acquiredAt.present) {
+      map['acquired_at'] = Variable<DateTime>(acquiredAt.value);
+    }
+    if (isEquipped.present) {
+      map['is_equipped'] = Variable<bool>(isEquipped.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalInventoryCompanion(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('remainingUses: $remainingUses, ')
+          ..write('acquiredAt: $acquiredAt, ')
+          ..write('isEquipped: $isEquipped, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalFishCollectionTable extends LocalFishCollection
+    with TableInfo<$LocalFishCollectionTable, LocalFishCollectionEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalFishCollectionTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _fishIdMeta = const VerificationMeta('fishId');
+  @override
+  late final GeneratedColumn<String> fishId = GeneratedColumn<String>(
+    'fish_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [fishId, count];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_fish_collection';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalFishCollectionEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('fish_id')) {
+      context.handle(
+        _fishIdMeta,
+        fishId.isAcceptableOrUnknown(data['fish_id']!, _fishIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fishIdMeta);
+    }
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {fishId};
+  @override
+  LocalFishCollectionEntity map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalFishCollectionEntity(
+      fishId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fish_id'],
+      )!,
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalFishCollectionTable createAlias(String alias) {
+    return $LocalFishCollectionTable(attachedDatabase, alias);
+  }
+}
+
+class LocalFishCollectionEntity extends DataClass
+    implements Insertable<LocalFishCollectionEntity> {
+  final String fishId;
+  final int count;
+  const LocalFishCollectionEntity({required this.fishId, required this.count});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['fish_id'] = Variable<String>(fishId);
+    map['count'] = Variable<int>(count);
+    return map;
+  }
+
+  LocalFishCollectionCompanion toCompanion(bool nullToAbsent) {
+    return LocalFishCollectionCompanion(
+      fishId: Value(fishId),
+      count: Value(count),
+    );
+  }
+
+  factory LocalFishCollectionEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalFishCollectionEntity(
+      fishId: serializer.fromJson<String>(json['fishId']),
+      count: serializer.fromJson<int>(json['count']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'fishId': serializer.toJson<String>(fishId),
+      'count': serializer.toJson<int>(count),
+    };
+  }
+
+  LocalFishCollectionEntity copyWith({String? fishId, int? count}) =>
+      LocalFishCollectionEntity(
+        fishId: fishId ?? this.fishId,
+        count: count ?? this.count,
+      );
+  LocalFishCollectionEntity copyWithCompanion(
+    LocalFishCollectionCompanion data,
+  ) {
+    return LocalFishCollectionEntity(
+      fishId: data.fishId.present ? data.fishId.value : this.fishId,
+      count: data.count.present ? data.count.value : this.count,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalFishCollectionEntity(')
+          ..write('fishId: $fishId, ')
+          ..write('count: $count')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(fishId, count);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalFishCollectionEntity &&
+          other.fishId == this.fishId &&
+          other.count == this.count);
+}
+
+class LocalFishCollectionCompanion
+    extends UpdateCompanion<LocalFishCollectionEntity> {
+  final Value<String> fishId;
+  final Value<int> count;
+  final Value<int> rowid;
+  const LocalFishCollectionCompanion({
+    this.fishId = const Value.absent(),
+    this.count = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalFishCollectionCompanion.insert({
+    required String fishId,
+    this.count = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : fishId = Value(fishId);
+  static Insertable<LocalFishCollectionEntity> custom({
+    Expression<String>? fishId,
+    Expression<int>? count,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (fishId != null) 'fish_id': fishId,
+      if (count != null) 'count': count,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalFishCollectionCompanion copyWith({
+    Value<String>? fishId,
+    Value<int>? count,
+    Value<int>? rowid,
+  }) {
+    return LocalFishCollectionCompanion(
+      fishId: fishId ?? this.fishId,
+      count: count ?? this.count,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (fishId.present) {
+      map['fish_id'] = Variable<String>(fishId.value);
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalFishCollectionCompanion(')
+          ..write('fishId: $fishId, ')
+          ..write('count: $count, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3557,6 +4581,29 @@ class $LocalUserProfilesTable extends LocalUserProfiles
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _weeklyGoalAnchorMeta = const VerificationMeta(
+    'weeklyGoalAnchor',
+  );
+  @override
+  late final GeneratedColumn<DateTime> weeklyGoalAnchor =
+      GeneratedColumn<DateTime>(
+        'weekly_goal_anchor',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastRewardedCycleIndexMeta =
+      const VerificationMeta('lastRewardedCycleIndex');
+  @override
+  late final GeneratedColumn<int> lastRewardedCycleIndex = GeneratedColumn<int>(
+    'last_rewarded_cycle_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(-1),
+  );
   static const VerificationMeta _vibrationOnMeta = const VerificationMeta(
     'vibrationOn',
   );
@@ -3586,6 +4633,18 @@ class $LocalUserProfilesTable extends LocalUserProfiles
       'CHECK ("notifications_on" IN (0, 1))',
     ),
     defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _seenTutorialsMeta = const VerificationMeta(
+    'seenTutorials',
+  );
+  @override
+  late final GeneratedColumn<String> seenTutorials = GeneratedColumn<String>(
+    'seen_tutorials',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -3617,8 +4676,11 @@ class $LocalUserProfilesTable extends LocalUserProfiles
     weeklyGoal,
     weekStartsOn,
     weeklyGoalUpdatedAt,
+    weeklyGoalAnchor,
+    lastRewardedCycleIndex,
     vibrationOn,
     notificationsOn,
+    seenTutorials,
     createdAt,
     updatedAt,
   ];
@@ -3681,6 +4743,24 @@ class $LocalUserProfilesTable extends LocalUserProfiles
         ),
       );
     }
+    if (data.containsKey('weekly_goal_anchor')) {
+      context.handle(
+        _weeklyGoalAnchorMeta,
+        weeklyGoalAnchor.isAcceptableOrUnknown(
+          data['weekly_goal_anchor']!,
+          _weeklyGoalAnchorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_rewarded_cycle_index')) {
+      context.handle(
+        _lastRewardedCycleIndexMeta,
+        lastRewardedCycleIndex.isAcceptableOrUnknown(
+          data['last_rewarded_cycle_index']!,
+          _lastRewardedCycleIndexMeta,
+        ),
+      );
+    }
     if (data.containsKey('vibration_on')) {
       context.handle(
         _vibrationOnMeta,
@@ -3696,6 +4776,15 @@ class $LocalUserProfilesTable extends LocalUserProfiles
         notificationsOn.isAcceptableOrUnknown(
           data['notifications_on']!,
           _notificationsOnMeta,
+        ),
+      );
+    }
+    if (data.containsKey('seen_tutorials')) {
+      context.handle(
+        _seenTutorialsMeta,
+        seenTutorials.isAcceptableOrUnknown(
+          data['seen_tutorials']!,
+          _seenTutorialsMeta,
         ),
       );
     }
@@ -3744,6 +4833,14 @@ class $LocalUserProfilesTable extends LocalUserProfiles
         DriftSqlType.dateTime,
         data['${effectivePrefix}weekly_goal_updated_at'],
       ),
+      weeklyGoalAnchor: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}weekly_goal_anchor'],
+      ),
+      lastRewardedCycleIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_rewarded_cycle_index'],
+      )!,
       vibrationOn: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}vibration_on'],
@@ -3751,6 +4848,10 @@ class $LocalUserProfilesTable extends LocalUserProfiles
       notificationsOn: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}notifications_on'],
+      )!,
+      seenTutorials: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}seen_tutorials'],
       )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -3777,8 +4878,11 @@ class LocalUserProfileEntity extends DataClass
   final int weeklyGoal;
   final String weekStartsOn;
   final DateTime? weeklyGoalUpdatedAt;
+  final DateTime? weeklyGoalAnchor;
+  final int lastRewardedCycleIndex;
   final bool vibrationOn;
   final bool notificationsOn;
+  final String seenTutorials;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   const LocalUserProfileEntity({
@@ -3788,8 +4892,11 @@ class LocalUserProfileEntity extends DataClass
     required this.weeklyGoal,
     required this.weekStartsOn,
     this.weeklyGoalUpdatedAt,
+    this.weeklyGoalAnchor,
+    required this.lastRewardedCycleIndex,
     required this.vibrationOn,
     required this.notificationsOn,
+    required this.seenTutorials,
     this.createdAt,
     this.updatedAt,
   });
@@ -3808,8 +4915,13 @@ class LocalUserProfileEntity extends DataClass
     if (!nullToAbsent || weeklyGoalUpdatedAt != null) {
       map['weekly_goal_updated_at'] = Variable<DateTime>(weeklyGoalUpdatedAt);
     }
+    if (!nullToAbsent || weeklyGoalAnchor != null) {
+      map['weekly_goal_anchor'] = Variable<DateTime>(weeklyGoalAnchor);
+    }
+    map['last_rewarded_cycle_index'] = Variable<int>(lastRewardedCycleIndex);
     map['vibration_on'] = Variable<bool>(vibrationOn);
     map['notifications_on'] = Variable<bool>(notificationsOn);
+    map['seen_tutorials'] = Variable<String>(seenTutorials);
     if (!nullToAbsent || createdAt != null) {
       map['created_at'] = Variable<DateTime>(createdAt);
     }
@@ -3833,8 +4945,13 @@ class LocalUserProfileEntity extends DataClass
       weeklyGoalUpdatedAt: weeklyGoalUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(weeklyGoalUpdatedAt),
+      weeklyGoalAnchor: weeklyGoalAnchor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weeklyGoalAnchor),
+      lastRewardedCycleIndex: Value(lastRewardedCycleIndex),
       vibrationOn: Value(vibrationOn),
       notificationsOn: Value(notificationsOn),
+      seenTutorials: Value(seenTutorials),
       createdAt: createdAt == null && nullToAbsent
           ? const Value.absent()
           : Value(createdAt),
@@ -3858,8 +4975,15 @@ class LocalUserProfileEntity extends DataClass
       weeklyGoalUpdatedAt: serializer.fromJson<DateTime?>(
         json['weeklyGoalUpdatedAt'],
       ),
+      weeklyGoalAnchor: serializer.fromJson<DateTime?>(
+        json['weeklyGoalAnchor'],
+      ),
+      lastRewardedCycleIndex: serializer.fromJson<int>(
+        json['lastRewardedCycleIndex'],
+      ),
       vibrationOn: serializer.fromJson<bool>(json['vibrationOn']),
       notificationsOn: serializer.fromJson<bool>(json['notificationsOn']),
+      seenTutorials: serializer.fromJson<String>(json['seenTutorials']),
       createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
     );
@@ -3874,8 +4998,11 @@ class LocalUserProfileEntity extends DataClass
       'weeklyGoal': serializer.toJson<int>(weeklyGoal),
       'weekStartsOn': serializer.toJson<String>(weekStartsOn),
       'weeklyGoalUpdatedAt': serializer.toJson<DateTime?>(weeklyGoalUpdatedAt),
+      'weeklyGoalAnchor': serializer.toJson<DateTime?>(weeklyGoalAnchor),
+      'lastRewardedCycleIndex': serializer.toJson<int>(lastRewardedCycleIndex),
       'vibrationOn': serializer.toJson<bool>(vibrationOn),
       'notificationsOn': serializer.toJson<bool>(notificationsOn),
+      'seenTutorials': serializer.toJson<String>(seenTutorials),
       'createdAt': serializer.toJson<DateTime?>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
     };
@@ -3888,8 +5015,11 @@ class LocalUserProfileEntity extends DataClass
     int? weeklyGoal,
     String? weekStartsOn,
     Value<DateTime?> weeklyGoalUpdatedAt = const Value.absent(),
+    Value<DateTime?> weeklyGoalAnchor = const Value.absent(),
+    int? lastRewardedCycleIndex,
     bool? vibrationOn,
     bool? notificationsOn,
+    String? seenTutorials,
     Value<DateTime?> createdAt = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
   }) => LocalUserProfileEntity(
@@ -3901,8 +5031,14 @@ class LocalUserProfileEntity extends DataClass
     weeklyGoalUpdatedAt: weeklyGoalUpdatedAt.present
         ? weeklyGoalUpdatedAt.value
         : this.weeklyGoalUpdatedAt,
+    weeklyGoalAnchor: weeklyGoalAnchor.present
+        ? weeklyGoalAnchor.value
+        : this.weeklyGoalAnchor,
+    lastRewardedCycleIndex:
+        lastRewardedCycleIndex ?? this.lastRewardedCycleIndex,
     vibrationOn: vibrationOn ?? this.vibrationOn,
     notificationsOn: notificationsOn ?? this.notificationsOn,
+    seenTutorials: seenTutorials ?? this.seenTutorials,
     createdAt: createdAt.present ? createdAt.value : this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
@@ -3922,12 +5058,21 @@ class LocalUserProfileEntity extends DataClass
       weeklyGoalUpdatedAt: data.weeklyGoalUpdatedAt.present
           ? data.weeklyGoalUpdatedAt.value
           : this.weeklyGoalUpdatedAt,
+      weeklyGoalAnchor: data.weeklyGoalAnchor.present
+          ? data.weeklyGoalAnchor.value
+          : this.weeklyGoalAnchor,
+      lastRewardedCycleIndex: data.lastRewardedCycleIndex.present
+          ? data.lastRewardedCycleIndex.value
+          : this.lastRewardedCycleIndex,
       vibrationOn: data.vibrationOn.present
           ? data.vibrationOn.value
           : this.vibrationOn,
       notificationsOn: data.notificationsOn.present
           ? data.notificationsOn.value
           : this.notificationsOn,
+      seenTutorials: data.seenTutorials.present
+          ? data.seenTutorials.value
+          : this.seenTutorials,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -3942,8 +5087,11 @@ class LocalUserProfileEntity extends DataClass
           ..write('weeklyGoal: $weeklyGoal, ')
           ..write('weekStartsOn: $weekStartsOn, ')
           ..write('weeklyGoalUpdatedAt: $weeklyGoalUpdatedAt, ')
+          ..write('weeklyGoalAnchor: $weeklyGoalAnchor, ')
+          ..write('lastRewardedCycleIndex: $lastRewardedCycleIndex, ')
           ..write('vibrationOn: $vibrationOn, ')
           ..write('notificationsOn: $notificationsOn, ')
+          ..write('seenTutorials: $seenTutorials, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -3958,8 +5106,11 @@ class LocalUserProfileEntity extends DataClass
     weeklyGoal,
     weekStartsOn,
     weeklyGoalUpdatedAt,
+    weeklyGoalAnchor,
+    lastRewardedCycleIndex,
     vibrationOn,
     notificationsOn,
+    seenTutorials,
     createdAt,
     updatedAt,
   );
@@ -3973,8 +5124,11 @@ class LocalUserProfileEntity extends DataClass
           other.weeklyGoal == this.weeklyGoal &&
           other.weekStartsOn == this.weekStartsOn &&
           other.weeklyGoalUpdatedAt == this.weeklyGoalUpdatedAt &&
+          other.weeklyGoalAnchor == this.weeklyGoalAnchor &&
+          other.lastRewardedCycleIndex == this.lastRewardedCycleIndex &&
           other.vibrationOn == this.vibrationOn &&
           other.notificationsOn == this.notificationsOn &&
+          other.seenTutorials == this.seenTutorials &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -3987,8 +5141,11 @@ class LocalUserProfilesCompanion
   final Value<int> weeklyGoal;
   final Value<String> weekStartsOn;
   final Value<DateTime?> weeklyGoalUpdatedAt;
+  final Value<DateTime?> weeklyGoalAnchor;
+  final Value<int> lastRewardedCycleIndex;
   final Value<bool> vibrationOn;
   final Value<bool> notificationsOn;
+  final Value<String> seenTutorials;
   final Value<DateTime?> createdAt;
   final Value<DateTime?> updatedAt;
   final Value<int> rowid;
@@ -3999,8 +5156,11 @@ class LocalUserProfilesCompanion
     this.weeklyGoal = const Value.absent(),
     this.weekStartsOn = const Value.absent(),
     this.weeklyGoalUpdatedAt = const Value.absent(),
+    this.weeklyGoalAnchor = const Value.absent(),
+    this.lastRewardedCycleIndex = const Value.absent(),
     this.vibrationOn = const Value.absent(),
     this.notificationsOn = const Value.absent(),
+    this.seenTutorials = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4012,8 +5172,11 @@ class LocalUserProfilesCompanion
     this.weeklyGoal = const Value.absent(),
     this.weekStartsOn = const Value.absent(),
     this.weeklyGoalUpdatedAt = const Value.absent(),
+    this.weeklyGoalAnchor = const Value.absent(),
+    this.lastRewardedCycleIndex = const Value.absent(),
     this.vibrationOn = const Value.absent(),
     this.notificationsOn = const Value.absent(),
+    this.seenTutorials = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -4025,8 +5188,11 @@ class LocalUserProfilesCompanion
     Expression<int>? weeklyGoal,
     Expression<String>? weekStartsOn,
     Expression<DateTime>? weeklyGoalUpdatedAt,
+    Expression<DateTime>? weeklyGoalAnchor,
+    Expression<int>? lastRewardedCycleIndex,
     Expression<bool>? vibrationOn,
     Expression<bool>? notificationsOn,
+    Expression<String>? seenTutorials,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -4039,8 +5205,12 @@ class LocalUserProfilesCompanion
       if (weekStartsOn != null) 'week_starts_on': weekStartsOn,
       if (weeklyGoalUpdatedAt != null)
         'weekly_goal_updated_at': weeklyGoalUpdatedAt,
+      if (weeklyGoalAnchor != null) 'weekly_goal_anchor': weeklyGoalAnchor,
+      if (lastRewardedCycleIndex != null)
+        'last_rewarded_cycle_index': lastRewardedCycleIndex,
       if (vibrationOn != null) 'vibration_on': vibrationOn,
       if (notificationsOn != null) 'notifications_on': notificationsOn,
+      if (seenTutorials != null) 'seen_tutorials': seenTutorials,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -4054,8 +5224,11 @@ class LocalUserProfilesCompanion
     Value<int>? weeklyGoal,
     Value<String>? weekStartsOn,
     Value<DateTime?>? weeklyGoalUpdatedAt,
+    Value<DateTime?>? weeklyGoalAnchor,
+    Value<int>? lastRewardedCycleIndex,
     Value<bool>? vibrationOn,
     Value<bool>? notificationsOn,
+    Value<String>? seenTutorials,
     Value<DateTime?>? createdAt,
     Value<DateTime?>? updatedAt,
     Value<int>? rowid,
@@ -4067,8 +5240,12 @@ class LocalUserProfilesCompanion
       weeklyGoal: weeklyGoal ?? this.weeklyGoal,
       weekStartsOn: weekStartsOn ?? this.weekStartsOn,
       weeklyGoalUpdatedAt: weeklyGoalUpdatedAt ?? this.weeklyGoalUpdatedAt,
+      weeklyGoalAnchor: weeklyGoalAnchor ?? this.weeklyGoalAnchor,
+      lastRewardedCycleIndex:
+          lastRewardedCycleIndex ?? this.lastRewardedCycleIndex,
       vibrationOn: vibrationOn ?? this.vibrationOn,
       notificationsOn: notificationsOn ?? this.notificationsOn,
+      seenTutorials: seenTutorials ?? this.seenTutorials,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -4098,11 +5275,22 @@ class LocalUserProfilesCompanion
         weeklyGoalUpdatedAt.value,
       );
     }
+    if (weeklyGoalAnchor.present) {
+      map['weekly_goal_anchor'] = Variable<DateTime>(weeklyGoalAnchor.value);
+    }
+    if (lastRewardedCycleIndex.present) {
+      map['last_rewarded_cycle_index'] = Variable<int>(
+        lastRewardedCycleIndex.value,
+      );
+    }
     if (vibrationOn.present) {
       map['vibration_on'] = Variable<bool>(vibrationOn.value);
     }
     if (notificationsOn.present) {
       map['notifications_on'] = Variable<bool>(notificationsOn.value);
+    }
+    if (seenTutorials.present) {
+      map['seen_tutorials'] = Variable<String>(seenTutorials.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -4125,8 +5313,11 @@ class LocalUserProfilesCompanion
           ..write('weeklyGoal: $weeklyGoal, ')
           ..write('weekStartsOn: $weekStartsOn, ')
           ..write('weeklyGoalUpdatedAt: $weeklyGoalUpdatedAt, ')
+          ..write('weeklyGoalAnchor: $weeklyGoalAnchor, ')
+          ..write('lastRewardedCycleIndex: $lastRewardedCycleIndex, ')
           ..write('vibrationOn: $vibrationOn, ')
           ..write('notificationsOn: $notificationsOn, ')
+          ..write('seenTutorials: $seenTutorials, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4145,6 +5336,11 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $LocalExercisesTable localExercises = $LocalExercisesTable(this);
   late final $LocalEconomyStateTable localEconomyState =
       $LocalEconomyStateTable(this);
+  late final $LocalAchievementsTable localAchievements =
+      $LocalAchievementsTable(this);
+  late final $LocalInventoryTable localInventory = $LocalInventoryTable(this);
+  late final $LocalFishCollectionTable localFishCollection =
+      $LocalFishCollectionTable(this);
   late final $LocalPurchasedItemsTable localPurchasedItems =
       $LocalPurchasedItemsTable(this);
   late final $LocalUnlockedTitlesTable localUnlockedTitles =
@@ -4164,6 +5360,9 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     localBodyParts,
     localExercises,
     localEconomyState,
+    localAchievements,
+    localInventory,
+    localFishCollection,
     localPurchasedItems,
     localUnlockedTitles,
     localBodyCompositionEntries,
@@ -5275,8 +6474,8 @@ class $$WorkoutSetsTableTableManager
               }) => WorkoutSetsCompanion.insert(
                 id: id,
                 itemId: itemId,
-                weight: weight,
-                reps: reps,
+                weight: Value(weight),
+                reps: Value(reps),
                 isWarmup: isWarmup,
                 isAssisted: isAssisted,
                 index: index,
@@ -5802,12 +7001,16 @@ typedef $$LocalEconomyStateTableCreateCompanionBuilder =
     LocalEconomyStateCompanion Function({
       required String id,
       Value<int> totalCoins,
+      Value<int> fishingTickets,
+      Value<String?> equippedTitleId,
       Value<int> rowid,
     });
 typedef $$LocalEconomyStateTableUpdateCompanionBuilder =
     LocalEconomyStateCompanion Function({
       Value<String> id,
       Value<int> totalCoins,
+      Value<int> fishingTickets,
+      Value<String?> equippedTitleId,
       Value<int> rowid,
     });
 
@@ -5827,6 +7030,16 @@ class $$LocalEconomyStateTableFilterComposer
 
   ColumnFilters<int> get totalCoins => $composableBuilder(
     column: $table.totalCoins,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fishingTickets => $composableBuilder(
+    column: $table.fishingTickets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get equippedTitleId => $composableBuilder(
+    column: $table.equippedTitleId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5849,6 +7062,16 @@ class $$LocalEconomyStateTableOrderingComposer
     column: $table.totalCoins,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get fishingTickets => $composableBuilder(
+    column: $table.fishingTickets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get equippedTitleId => $composableBuilder(
+    column: $table.equippedTitleId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LocalEconomyStateTableAnnotationComposer
@@ -5865,6 +7088,16 @@ class $$LocalEconomyStateTableAnnotationComposer
 
   GeneratedColumn<int> get totalCoins => $composableBuilder(
     column: $table.totalCoins,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get fishingTickets => $composableBuilder(
+    column: $table.fishingTickets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get equippedTitleId => $composableBuilder(
+    column: $table.equippedTitleId,
     builder: (column) => column,
   );
 }
@@ -5911,20 +7144,28 @@ class $$LocalEconomyStateTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<int> totalCoins = const Value.absent(),
+                Value<int> fishingTickets = const Value.absent(),
+                Value<String?> equippedTitleId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LocalEconomyStateCompanion(
                 id: id,
                 totalCoins: totalCoins,
+                fishingTickets: fishingTickets,
+                equippedTitleId: equippedTitleId,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
                 Value<int> totalCoins = const Value.absent(),
+                Value<int> fishingTickets = const Value.absent(),
+                Value<String?> equippedTitleId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LocalEconomyStateCompanion.insert(
                 id: id,
                 totalCoins: totalCoins,
+                fishingTickets: fishingTickets,
+                equippedTitleId: equippedTitleId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5954,6 +7195,539 @@ typedef $$LocalEconomyStateTableProcessedTableManager =
         >,
       ),
       LocalEconomyStateEntity,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalAchievementsTableCreateCompanionBuilder =
+    LocalAchievementsCompanion Function({
+      required String achievementKey,
+      Value<int> count,
+      Value<int> rowid,
+    });
+typedef $$LocalAchievementsTableUpdateCompanionBuilder =
+    LocalAchievementsCompanion Function({
+      Value<String> achievementKey,
+      Value<int> count,
+      Value<int> rowid,
+    });
+
+class $$LocalAchievementsTableFilterComposer
+    extends Composer<_$LocalDatabase, $LocalAchievementsTable> {
+  $$LocalAchievementsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get achievementKey => $composableBuilder(
+    column: $table.achievementKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalAchievementsTableOrderingComposer
+    extends Composer<_$LocalDatabase, $LocalAchievementsTable> {
+  $$LocalAchievementsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get achievementKey => $composableBuilder(
+    column: $table.achievementKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalAchievementsTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $LocalAchievementsTable> {
+  $$LocalAchievementsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get achievementKey => $composableBuilder(
+    column: $table.achievementKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+}
+
+class $$LocalAchievementsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $LocalAchievementsTable,
+          LocalAchievementEntity,
+          $$LocalAchievementsTableFilterComposer,
+          $$LocalAchievementsTableOrderingComposer,
+          $$LocalAchievementsTableAnnotationComposer,
+          $$LocalAchievementsTableCreateCompanionBuilder,
+          $$LocalAchievementsTableUpdateCompanionBuilder,
+          (
+            LocalAchievementEntity,
+            BaseReferences<
+              _$LocalDatabase,
+              $LocalAchievementsTable,
+              LocalAchievementEntity
+            >,
+          ),
+          LocalAchievementEntity,
+          PrefetchHooks Function()
+        > {
+  $$LocalAchievementsTableTableManager(
+    _$LocalDatabase db,
+    $LocalAchievementsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalAchievementsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalAchievementsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalAchievementsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> achievementKey = const Value.absent(),
+                Value<int> count = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalAchievementsCompanion(
+                achievementKey: achievementKey,
+                count: count,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String achievementKey,
+                Value<int> count = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalAchievementsCompanion.insert(
+                achievementKey: achievementKey,
+                count: count,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalAchievementsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $LocalAchievementsTable,
+      LocalAchievementEntity,
+      $$LocalAchievementsTableFilterComposer,
+      $$LocalAchievementsTableOrderingComposer,
+      $$LocalAchievementsTableAnnotationComposer,
+      $$LocalAchievementsTableCreateCompanionBuilder,
+      $$LocalAchievementsTableUpdateCompanionBuilder,
+      (
+        LocalAchievementEntity,
+        BaseReferences<
+          _$LocalDatabase,
+          $LocalAchievementsTable,
+          LocalAchievementEntity
+        >,
+      ),
+      LocalAchievementEntity,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalInventoryTableCreateCompanionBuilder =
+    LocalInventoryCompanion Function({
+      required String id,
+      required String itemId,
+      required int remainingUses,
+      required DateTime acquiredAt,
+      Value<bool> isEquipped,
+      Value<int> rowid,
+    });
+typedef $$LocalInventoryTableUpdateCompanionBuilder =
+    LocalInventoryCompanion Function({
+      Value<String> id,
+      Value<String> itemId,
+      Value<int> remainingUses,
+      Value<DateTime> acquiredAt,
+      Value<bool> isEquipped,
+      Value<int> rowid,
+    });
+
+class $$LocalInventoryTableFilterComposer
+    extends Composer<_$LocalDatabase, $LocalInventoryTable> {
+  $$LocalInventoryTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get remainingUses => $composableBuilder(
+    column: $table.remainingUses,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEquipped => $composableBuilder(
+    column: $table.isEquipped,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalInventoryTableOrderingComposer
+    extends Composer<_$LocalDatabase, $LocalInventoryTable> {
+  $$LocalInventoryTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get remainingUses => $composableBuilder(
+    column: $table.remainingUses,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEquipped => $composableBuilder(
+    column: $table.isEquipped,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalInventoryTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $LocalInventoryTable> {
+  $$LocalInventoryTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<int> get remainingUses => $composableBuilder(
+    column: $table.remainingUses,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get acquiredAt => $composableBuilder(
+    column: $table.acquiredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isEquipped => $composableBuilder(
+    column: $table.isEquipped,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalInventoryTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $LocalInventoryTable,
+          LocalInventoryEntity,
+          $$LocalInventoryTableFilterComposer,
+          $$LocalInventoryTableOrderingComposer,
+          $$LocalInventoryTableAnnotationComposer,
+          $$LocalInventoryTableCreateCompanionBuilder,
+          $$LocalInventoryTableUpdateCompanionBuilder,
+          (
+            LocalInventoryEntity,
+            BaseReferences<
+              _$LocalDatabase,
+              $LocalInventoryTable,
+              LocalInventoryEntity
+            >,
+          ),
+          LocalInventoryEntity,
+          PrefetchHooks Function()
+        > {
+  $$LocalInventoryTableTableManager(
+    _$LocalDatabase db,
+    $LocalInventoryTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalInventoryTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalInventoryTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalInventoryTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<int> remainingUses = const Value.absent(),
+                Value<DateTime> acquiredAt = const Value.absent(),
+                Value<bool> isEquipped = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalInventoryCompanion(
+                id: id,
+                itemId: itemId,
+                remainingUses: remainingUses,
+                acquiredAt: acquiredAt,
+                isEquipped: isEquipped,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String itemId,
+                required int remainingUses,
+                required DateTime acquiredAt,
+                Value<bool> isEquipped = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalInventoryCompanion.insert(
+                id: id,
+                itemId: itemId,
+                remainingUses: remainingUses,
+                acquiredAt: acquiredAt,
+                isEquipped: isEquipped,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalInventoryTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $LocalInventoryTable,
+      LocalInventoryEntity,
+      $$LocalInventoryTableFilterComposer,
+      $$LocalInventoryTableOrderingComposer,
+      $$LocalInventoryTableAnnotationComposer,
+      $$LocalInventoryTableCreateCompanionBuilder,
+      $$LocalInventoryTableUpdateCompanionBuilder,
+      (
+        LocalInventoryEntity,
+        BaseReferences<
+          _$LocalDatabase,
+          $LocalInventoryTable,
+          LocalInventoryEntity
+        >,
+      ),
+      LocalInventoryEntity,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalFishCollectionTableCreateCompanionBuilder =
+    LocalFishCollectionCompanion Function({
+      required String fishId,
+      Value<int> count,
+      Value<int> rowid,
+    });
+typedef $$LocalFishCollectionTableUpdateCompanionBuilder =
+    LocalFishCollectionCompanion Function({
+      Value<String> fishId,
+      Value<int> count,
+      Value<int> rowid,
+    });
+
+class $$LocalFishCollectionTableFilterComposer
+    extends Composer<_$LocalDatabase, $LocalFishCollectionTable> {
+  $$LocalFishCollectionTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get fishId => $composableBuilder(
+    column: $table.fishId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalFishCollectionTableOrderingComposer
+    extends Composer<_$LocalDatabase, $LocalFishCollectionTable> {
+  $$LocalFishCollectionTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get fishId => $composableBuilder(
+    column: $table.fishId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalFishCollectionTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $LocalFishCollectionTable> {
+  $$LocalFishCollectionTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get fishId =>
+      $composableBuilder(column: $table.fishId, builder: (column) => column);
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+}
+
+class $$LocalFishCollectionTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $LocalFishCollectionTable,
+          LocalFishCollectionEntity,
+          $$LocalFishCollectionTableFilterComposer,
+          $$LocalFishCollectionTableOrderingComposer,
+          $$LocalFishCollectionTableAnnotationComposer,
+          $$LocalFishCollectionTableCreateCompanionBuilder,
+          $$LocalFishCollectionTableUpdateCompanionBuilder,
+          (
+            LocalFishCollectionEntity,
+            BaseReferences<
+              _$LocalDatabase,
+              $LocalFishCollectionTable,
+              LocalFishCollectionEntity
+            >,
+          ),
+          LocalFishCollectionEntity,
+          PrefetchHooks Function()
+        > {
+  $$LocalFishCollectionTableTableManager(
+    _$LocalDatabase db,
+    $LocalFishCollectionTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalFishCollectionTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalFishCollectionTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalFishCollectionTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> fishId = const Value.absent(),
+                Value<int> count = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalFishCollectionCompanion(
+                fishId: fishId,
+                count: count,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String fishId,
+                Value<int> count = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalFishCollectionCompanion.insert(
+                fishId: fishId,
+                count: count,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalFishCollectionTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $LocalFishCollectionTable,
+      LocalFishCollectionEntity,
+      $$LocalFishCollectionTableFilterComposer,
+      $$LocalFishCollectionTableOrderingComposer,
+      $$LocalFishCollectionTableAnnotationComposer,
+      $$LocalFishCollectionTableCreateCompanionBuilder,
+      $$LocalFishCollectionTableUpdateCompanionBuilder,
+      (
+        LocalFishCollectionEntity,
+        BaseReferences<
+          _$LocalDatabase,
+          $LocalFishCollectionTable,
+          LocalFishCollectionEntity
+        >,
+      ),
+      LocalFishCollectionEntity,
       PrefetchHooks Function()
     >;
 typedef $$LocalPurchasedItemsTableCreateCompanionBuilder =
@@ -6604,8 +8378,11 @@ typedef $$LocalUserProfilesTableCreateCompanionBuilder =
       Value<int> weeklyGoal,
       Value<String> weekStartsOn,
       Value<DateTime?> weeklyGoalUpdatedAt,
+      Value<DateTime?> weeklyGoalAnchor,
+      Value<int> lastRewardedCycleIndex,
       Value<bool> vibrationOn,
       Value<bool> notificationsOn,
+      Value<String> seenTutorials,
       Value<DateTime?> createdAt,
       Value<DateTime?> updatedAt,
       Value<int> rowid,
@@ -6618,8 +8395,11 @@ typedef $$LocalUserProfilesTableUpdateCompanionBuilder =
       Value<int> weeklyGoal,
       Value<String> weekStartsOn,
       Value<DateTime?> weeklyGoalUpdatedAt,
+      Value<DateTime?> weeklyGoalAnchor,
+      Value<int> lastRewardedCycleIndex,
       Value<bool> vibrationOn,
       Value<bool> notificationsOn,
+      Value<String> seenTutorials,
       Value<DateTime?> createdAt,
       Value<DateTime?> updatedAt,
       Value<int> rowid,
@@ -6664,6 +8444,16 @@ class $$LocalUserProfilesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<DateTime> get weeklyGoalAnchor => $composableBuilder(
+    column: $table.weeklyGoalAnchor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastRewardedCycleIndex => $composableBuilder(
+    column: $table.lastRewardedCycleIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get vibrationOn => $composableBuilder(
     column: $table.vibrationOn,
     builder: (column) => ColumnFilters(column),
@@ -6671,6 +8461,11 @@ class $$LocalUserProfilesTableFilterComposer
 
   ColumnFilters<bool> get notificationsOn => $composableBuilder(
     column: $table.notificationsOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seenTutorials => $composableBuilder(
+    column: $table.seenTutorials,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6724,6 +8519,16 @@ class $$LocalUserProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get weeklyGoalAnchor => $composableBuilder(
+    column: $table.weeklyGoalAnchor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastRewardedCycleIndex => $composableBuilder(
+    column: $table.lastRewardedCycleIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get vibrationOn => $composableBuilder(
     column: $table.vibrationOn,
     builder: (column) => ColumnOrderings(column),
@@ -6731,6 +8536,11 @@ class $$LocalUserProfilesTableOrderingComposer
 
   ColumnOrderings<bool> get notificationsOn => $composableBuilder(
     column: $table.notificationsOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seenTutorials => $composableBuilder(
+    column: $table.seenTutorials,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -6780,6 +8590,16 @@ class $$LocalUserProfilesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get weeklyGoalAnchor => $composableBuilder(
+    column: $table.weeklyGoalAnchor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastRewardedCycleIndex => $composableBuilder(
+    column: $table.lastRewardedCycleIndex,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get vibrationOn => $composableBuilder(
     column: $table.vibrationOn,
     builder: (column) => column,
@@ -6787,6 +8607,11 @@ class $$LocalUserProfilesTableAnnotationComposer
 
   GeneratedColumn<bool> get notificationsOn => $composableBuilder(
     column: $table.notificationsOn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get seenTutorials => $composableBuilder(
+    column: $table.seenTutorials,
     builder: (column) => column,
   );
 
@@ -6843,8 +8668,11 @@ class $$LocalUserProfilesTableTableManager
                 Value<int> weeklyGoal = const Value.absent(),
                 Value<String> weekStartsOn = const Value.absent(),
                 Value<DateTime?> weeklyGoalUpdatedAt = const Value.absent(),
+                Value<DateTime?> weeklyGoalAnchor = const Value.absent(),
+                Value<int> lastRewardedCycleIndex = const Value.absent(),
                 Value<bool> vibrationOn = const Value.absent(),
                 Value<bool> notificationsOn = const Value.absent(),
+                Value<String> seenTutorials = const Value.absent(),
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -6855,8 +8683,11 @@ class $$LocalUserProfilesTableTableManager
                 weeklyGoal: weeklyGoal,
                 weekStartsOn: weekStartsOn,
                 weeklyGoalUpdatedAt: weeklyGoalUpdatedAt,
+                weeklyGoalAnchor: weeklyGoalAnchor,
+                lastRewardedCycleIndex: lastRewardedCycleIndex,
                 vibrationOn: vibrationOn,
                 notificationsOn: notificationsOn,
+                seenTutorials: seenTutorials,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -6869,8 +8700,11 @@ class $$LocalUserProfilesTableTableManager
                 Value<int> weeklyGoal = const Value.absent(),
                 Value<String> weekStartsOn = const Value.absent(),
                 Value<DateTime?> weeklyGoalUpdatedAt = const Value.absent(),
+                Value<DateTime?> weeklyGoalAnchor = const Value.absent(),
+                Value<int> lastRewardedCycleIndex = const Value.absent(),
                 Value<bool> vibrationOn = const Value.absent(),
                 Value<bool> notificationsOn = const Value.absent(),
+                Value<String> seenTutorials = const Value.absent(),
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -6881,8 +8715,11 @@ class $$LocalUserProfilesTableTableManager
                 weeklyGoal: weeklyGoal,
                 weekStartsOn: weekStartsOn,
                 weeklyGoalUpdatedAt: weeklyGoalUpdatedAt,
+                weeklyGoalAnchor: weeklyGoalAnchor,
+                lastRewardedCycleIndex: lastRewardedCycleIndex,
                 vibrationOn: vibrationOn,
                 notificationsOn: notificationsOn,
+                seenTutorials: seenTutorials,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -6932,6 +8769,12 @@ class $LocalDatabaseManager {
       $$LocalExercisesTableTableManager(_db, _db.localExercises);
   $$LocalEconomyStateTableTableManager get localEconomyState =>
       $$LocalEconomyStateTableTableManager(_db, _db.localEconomyState);
+  $$LocalAchievementsTableTableManager get localAchievements =>
+      $$LocalAchievementsTableTableManager(_db, _db.localAchievements);
+  $$LocalInventoryTableTableManager get localInventory =>
+      $$LocalInventoryTableTableManager(_db, _db.localInventory);
+  $$LocalFishCollectionTableTableManager get localFishCollection =>
+      $$LocalFishCollectionTableTableManager(_db, _db.localFishCollection);
   $$LocalPurchasedItemsTableTableManager get localPurchasedItems =>
       $$LocalPurchasedItemsTableTableManager(_db, _db.localPurchasedItems);
   $$LocalUnlockedTitlesTableTableManager get localUnlockedTitles =>

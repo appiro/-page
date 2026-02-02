@@ -93,6 +93,9 @@ class _TimerScreenState extends State<TimerScreen> {
     // Show notification
     NotificationService().showTimerNotification(_seconds);
 
+    // Vibrate device (pulsing feedback)
+    _vibrateAlert();
+
     // Show dialog
     if (mounted) {
       showDialog(
@@ -122,6 +125,14 @@ class _TimerScreenState extends State<TimerScreen> {
           ],
         ),
       );
+    }
+  }
+
+  Future<void> _vibrateAlert() async {
+    // Simple pulsing vibration using HapticFeedback
+    for (int i = 0; i < 5; i++) {
+        await HapticFeedback.heavyImpact();
+        await Future.delayed(const Duration(milliseconds: 500));
     }
   }
 

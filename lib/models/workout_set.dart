@@ -1,20 +1,23 @@
 class WorkoutSet {
-  final double weight;
-  final int reps;
+  final double? weight; // nullable (time系では null)
+  final int? reps; // nullable (time系では null)
+  final int? durationSec; // nullable (weightReps系では null)
   final bool assisted;
   final String? setMemo;
 
   WorkoutSet({
-    required this.weight,
-    required this.reps,
+    this.weight,
+    this.reps,
+    this.durationSec,
     this.assisted = false,
     this.setMemo,
   });
 
   factory WorkoutSet.fromMap(Map<String, dynamic> map) {
     return WorkoutSet(
-      weight: (map['weight'] ?? 0.0).toDouble(),
-      reps: map['reps'] ?? 0,
+      weight: map['weight']?.toDouble(),
+      reps: map['reps'],
+      durationSec: map['durationSec'],
       assisted: map['assisted'] ?? false,
       setMemo: map['setMemo'],
     );
@@ -22,8 +25,9 @@ class WorkoutSet {
 
   Map<String, dynamic> toMap() {
     return {
-      'weight': weight,
-      'reps': reps,
+      if (weight != null) 'weight': weight,
+      if (reps != null) 'reps': reps,
+      if (durationSec != null) 'durationSec': durationSec,
       'assisted': assisted,
       if (setMemo != null) 'setMemo': setMemo,
     };
@@ -32,17 +36,25 @@ class WorkoutSet {
   WorkoutSet copyWith({
     double? weight,
     int? reps,
+    int? durationSec,
     bool? assisted,
     String? setMemo,
   }) {
     return WorkoutSet(
       weight: weight ?? this.weight,
       reps: reps ?? this.reps,
+      durationSec: durationSec ?? this.durationSec,
       assisted: assisted ?? this.assisted,
       setMemo: setMemo ?? this.setMemo,
     );
   }
 
   // Calculate volume for this set
-  double get volume => weight * reps;
+  // time系セットはvolume計算に含めない（0を返す）
+  double get volume {
+    if (weight != null && reps != null) {
+      return weight! * reps!.toDouble();
+    }
+    return 0.0;
+  }
 }
