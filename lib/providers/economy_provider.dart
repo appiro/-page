@@ -586,8 +586,9 @@ class EconomyProvider with ChangeNotifier {
   String? getTitleProgress(String titleId) {
     // 1. streak
     if (titleId == 'not_mikkabouzu') return '$_consecutiveWeeksStreak / 1 週間';
-    if (titleId == 'consistency_power')
+    if (titleId == 'consistency_power') {
       return '$_consecutiveWeeksStreak / 3 週間';
+    }
     if (titleId == 'life_part') return '$_consecutiveWeeksStreak / 6 週間';
     if (titleId == 'iron_man_streak') return '$_consecutiveWeeksStreak / 12 週間';
 
@@ -607,17 +608,20 @@ class EconomyProvider with ChangeNotifier {
     );
     if (titleId == 'pump_intro') return '${_formatVol(maxVol)} / 5,000 kg';
     if (titleId == 'oikomi_expert') return '${_formatVol(maxVol)} / 10,000 kg';
-    if (titleId == 'monster_routine')
+    if (titleId == 'monster_routine') {
       return '${_formatVol(maxVol)} / 20,000 kg';
+    }
 
     // 4. Total Volume
     final totalVol = _economyState.getAchievementCount(
       AppConstants.achievementTotalVolume,
     );
-    if (titleId == 'load_1_ton')
+    if (titleId == 'load_1_ton') {
       return '${_formatVol(totalVol)} / 1,000,000 kg';
-    if (titleId == 'load_10_ton')
+    }
+    if (titleId == 'load_10_ton') {
       return '${_formatVol(totalVol)} / 10,000,000 kg';
+    }
 
     return null;
   }
