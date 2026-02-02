@@ -321,8 +321,29 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('削除', style: TextStyle(color: Colors.red)),
+              leading: Icon(
+                Icons.delete,
+                color:
+                    DefaultDataHelper.defaultExerciseNames.contains(
+                      exercise.name,
+                    )
+                    ? Colors.grey
+                    : Colors.red,
+              ),
+              title: Text(
+                '削除',
+                style: TextStyle(
+                  color:
+                      DefaultDataHelper.defaultExerciseNames.contains(
+                        exercise.name,
+                      )
+                      ? Colors.grey
+                      : Colors.red,
+                ),
+              ),
+              enabled: !DefaultDataHelper.defaultExerciseNames.contains(
+                exercise.name,
+              ),
               onTap: () {
                 Navigator.pop(context);
                 final provider = context.read<MasterProvider>();
@@ -604,16 +625,16 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (!isDefault)
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.more_vert,
-                                        color: Colors.grey,
-                                      ),
-                                      onPressed: () =>
-                                          _showExerciseOptions(exercise),
-                                      tooltip: 'オプション',
+                                  // Removed !isDefault check to allow editing all exercises
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.more_vert,
+                                      color: Colors.grey,
                                     ),
+                                    onPressed: () =>
+                                        _showExerciseOptions(exercise),
+                                    tooltip: 'オプション',
+                                  ),
                                   const Icon(Icons.arrow_forward_ios, size: 16),
                                 ],
                               ),

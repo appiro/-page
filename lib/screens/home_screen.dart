@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
               {
                 'title': 'ようこそ！',
                 'icon': Icons.fitness_center,
-                'text': 'Fit_Appへようこそ！\n毎日のトレーニングを楽しく記録しましょう。',
+                'text': 'ツリトレへようこそ！\n毎日のトレーニングを楽しく記録しましょう。',
               },
               {
                 'title': 'ワークアウト記録',

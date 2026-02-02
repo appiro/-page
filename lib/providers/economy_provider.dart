@@ -680,12 +680,20 @@ class EconomyProvider with ChangeNotifier {
 
     final totalVol = workout.totalVolume.round();
     final maxVol = totalVol;
+    final totalDuration = workout.totalDuration;
 
-    print('📊 Volume - Total: $totalVol, Max: $maxVol');
+    print(
+      '📊 Stats - Volume: $totalVol, Max: $maxVol, Duration: $totalDuration',
+    );
 
-    // Update volume stats
-    await _economyService.updateVolumeStats(uid, maxVol, totalVol);
-    print('✅ Volume stats updated');
+    // Update stats
+    await _economyService.updateWorkoutStats(
+      uid,
+      maxVol,
+      totalVol,
+      totalDuration,
+    );
+    print('✅ Workout stats updated');
 
     // Reload state to get latest achievement counts
     final newState = await _repository.getEconomyState(uid);

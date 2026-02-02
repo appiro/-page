@@ -1,0 +1,178 @@
+/* privacy.css */
+:root {
+  --bg: #0b0f14;
+  --card: #121824;
+  --text: #e8eef7;
+  --muted: #a9b4c4;
+  --line: rgba(255, 255, 255, 0.10);
+  --accent: #4aa3ff;
+
+  --radius: 14px;
+  --maxw: 920px;
+
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
+    "Yu Gothic", Meiryo, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  background: radial-gradient(1200px 600px at 10% 0%, rgba(74, 163, 255, 0.18), transparent 60%),
+              radial-gradient(900px 500px at 90% 20%, rgba(122, 92, 255, 0.14), transparent 55%),
+              var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+}
+
+/* Main layout */
+main,
+body > * {
+  max-width: var(--maxw);
+  margin: 0 auto;
+}
+
+body {
+  padding: 48px 18px 72px;
+}
+
+/* Card container feel */
+body > h1,
+body > p,
+body > hr,
+body > h2,
+body > ul {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+}
+
+/* Tighten spacing between “cards” */
+body > * + * {
+  margin-top: 14px;
+}
+
+/* Headings */
+h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.2vw, 2.0rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* Paragraphs */
+p {
+  margin: 0;
+  color: var(--text);
+}
+
+p strong {
+  color: var(--text);
+}
+
+/* Muted helper (if you want to wrap e.g. update date) */
+.muted {
+  color: var(--muted);
+}
+
+/* Lists */
+ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text);
+}
+
+li {
+  margin: 0.35rem 0;
+}
+
+li > ul {
+  margin-top: 0.5rem;
+}
+
+/* Divider */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line), transparent);
+  padding: 0;
+}
+
+/* Links */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 650;
+}
+
+a:hover,
+a:focus {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Mobile tweaks */
+@media (max-width: 520px) {
+  body {
+    padding: 28px 12px 56px;
+  }
+  body > h1,
+  body > p,
+  body > hr,
+  body > h2,
+  body > ul {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+}
+
+/* Print (optional, makes it clean for reviewers) */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --card: #ffffff;
+    --text: #000000;
+    --muted: #333333;
+    --line: rgba(0, 0, 0, 0.15);
+    --accent: #0b57d0;
+  }
+
+  body {
+    background: #fff;
+    padding: 0;
+  }
+
+  body > h1,
+  body > p,
+  body > hr,
+  body > h2,
+  body > ul {
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+}

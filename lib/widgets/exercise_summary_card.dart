@@ -33,6 +33,10 @@ class ExerciseSummaryCard extends StatelessWidget {
       totalDuration = item.sets.fold(0, (sum, s) => sum + (s.durationSec ?? 0));
     }
 
+    print(
+      'ExerciseSummaryCard: ${item.exerciseName}, Type: $measureType, TotalDuration: $totalDuration, Sets: ${item.sets.length}',
+    );
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,

@@ -152,6 +152,40 @@ class Title {
         rarity: TitleRarity.rare,
       ),
 
+      // --- Time/Duration ---
+      const Title(
+        id: '1_hour_training',
+        name: '1時間の積み重ね',
+        description: '時間こそ最も貴重な資源',
+        condition: '累計トレーニング時間1時間',
+        iconName: 'timer',
+        rarity: TitleRarity.common,
+      ),
+      const Title(
+        id: '10_hours_training',
+        name: '10時間の努力',
+        description: '継続は力なり',
+        condition: '累計トレーニング時間10時間',
+        iconName: 'timer_10',
+        rarity: TitleRarity.common,
+      ),
+      const Title(
+        id: '24_hours_training',
+        name: '1日分の努力',
+        description: '丸一日トレーニングに費やした猛者',
+        condition: '累計トレーニング時間24時間',
+        iconName: 'history',
+        rarity: TitleRarity.rare,
+      ),
+      const Title(
+        id: '100_hours_training',
+        name: '100時間の境地',
+        description: 'もはや住処はジム',
+        condition: '累計トレーニング時間100時間',
+        iconName: 'hourglass_full',
+        rarity: TitleRarity.epic,
+      ),
+
       // --- Purchased (Shop) ---
       const Title(
         id: 'serious_mode',

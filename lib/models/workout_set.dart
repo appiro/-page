@@ -1,17 +1,19 @@
 class WorkoutSet {
-  final double? weight; // nullable (time系では null)
-  final int? reps; // nullable (time系では null)
-  final int? durationSec; // nullable (weightReps系では null)
+  final String localId;
+  final double? weight;
+  final int? reps;
+  final int? durationSec;
   final bool assisted;
   final String? setMemo;
 
   WorkoutSet({
+    String? localId,
     this.weight,
     this.reps,
     this.durationSec,
     this.assisted = false,
     this.setMemo,
-  });
+  }) : localId = localId ?? DateTime.now().microsecondsSinceEpoch.toString();
 
   factory WorkoutSet.fromMap(Map<String, dynamic> map) {
     return WorkoutSet(
@@ -34,6 +36,7 @@ class WorkoutSet {
   }
 
   WorkoutSet copyWith({
+    String? localId,
     double? weight,
     int? reps,
     int? durationSec,
@@ -41,6 +44,7 @@ class WorkoutSet {
     String? setMemo,
   }) {
     return WorkoutSet(
+      localId: localId ?? this.localId,
       weight: weight ?? this.weight,
       reps: reps ?? this.reps,
       durationSec: durationSec ?? this.durationSec,

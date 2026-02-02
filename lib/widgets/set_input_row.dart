@@ -68,6 +68,7 @@ class _SetInputRowState extends State<SetInputRow> {
       final duration = int.tryParse(_durationController.text) ?? 0;
       widget.onChanged(
         WorkoutSet(
+          localId: widget.set.localId,
           weight: null,
           reps: null,
           durationSec: duration,
@@ -79,6 +80,7 @@ class _SetInputRowState extends State<SetInputRow> {
       final reps = int.tryParse(_repsController.text) ?? 0;
       widget.onChanged(
         WorkoutSet(
+          localId: widget.set.localId,
           weight: null,
           reps: reps,
           durationSec: null,
@@ -92,6 +94,7 @@ class _SetInputRowState extends State<SetInputRow> {
 
       widget.onChanged(
         WorkoutSet(
+          localId: widget.set.localId,
           weight: weight,
           reps: reps,
           durationSec:

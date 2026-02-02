@@ -314,6 +314,40 @@ class EconomyService {
               print('   ❌ ${title.id}: totalVol $vol < 10000000');
             break;
 
+          // --- Total Duration ---
+          case '1_hour_training':
+            final duration = economyState.getAchievementCount(
+              AppConstants.achievementTotalDuration,
+            );
+            shouldUnlock = duration >= 3600;
+            if (!shouldUnlock)
+              print('   ❌ ${title.id}: duration $duration < 3600');
+            break;
+          case '10_hours_training':
+            final duration = economyState.getAchievementCount(
+              AppConstants.achievementTotalDuration,
+            );
+            shouldUnlock = duration >= 36000;
+            if (!shouldUnlock)
+              print('   ❌ ${title.id}: duration $duration < 36000');
+            break;
+          case '24_hours_training':
+            final duration = economyState.getAchievementCount(
+              AppConstants.achievementTotalDuration,
+            );
+            shouldUnlock = duration >= 86400;
+            if (!shouldUnlock)
+              print('   ❌ ${title.id}: duration $duration < 86400');
+            break;
+          case '100_hours_training':
+            final duration = economyState.getAchievementCount(
+              AppConstants.achievementTotalDuration,
+            );
+            shouldUnlock = duration >= 360000;
+            if (!shouldUnlock)
+              print('   ❌ ${title.id}: duration $duration < 360000');
+            break;
+
           // --- Coins ---
           case 'coin_collector':
             final coins = economyState.getAchievementCount(
@@ -392,37 +426,43 @@ class EconomyService {
     }
   }
 
-  // Update volume stats
-  Future<void> updateVolumeStats(
+  // Update workout stats (volume and duration)
+  Future<void> updateWorkoutStats(
     String uid,
     int workoutMaxVolume,
     int workoutTotalVolume,
+    int workoutDuration,
   ) async {
     try {
       final economyState = await _repository.getEconomyState(uid);
-      final currentTotal = economyState.getAchievementCount(
+      final currentTotalVolume = economyState.getAchievementCount(
         AppConstants.achievementTotalVolume,
       );
-      final currentMax = economyState.getAchievementCount(
+      final currentMaxVolume = economyState.getAchievementCount(
         AppConstants.achievementMaxVolume,
       );
+      final currentTotalDuration = economyState.getAchievementCount(
+        AppConstants.achievementTotalDuration,
+      );
 
-      final newTotal = currentTotal + workoutTotalVolume;
-      final newMax = (workoutMaxVolume > currentMax)
+      final newTotalVolume = currentTotalVolume + workoutTotalVolume;
+      final newMaxVolume = (workoutMaxVolume > currentMaxVolume)
           ? workoutMaxVolume
-          : currentMax;
+          : currentMaxVolume;
+      final newTotalDuration = currentTotalDuration + workoutDuration;
 
       final newState = economyState.copyWith(
         achievementCounts: {
           ...economyState.achievementCounts,
-          AppConstants.achievementTotalVolume: newTotal,
-          AppConstants.achievementMaxVolume: newMax,
+          AppConstants.achievementTotalVolume: newTotalVolume,
+          AppConstants.achievementMaxVolume: newMaxVolume,
+          AppConstants.achievementTotalDuration: newTotalDuration,
         },
       );
 
       await _repository.updateEconomyState(uid, newState);
     } catch (e) {
-      throw Exception('Failed to update volume stats: ${e.toString()}');
+      throw Exception('Failed to update workout stats: ${e.toString()}');
     }
   }
 

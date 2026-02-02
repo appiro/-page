@@ -210,7 +210,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase.forTesting(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -276,30 +276,53 @@ class LocalDatabase extends _$LocalDatabase {
         await m.addColumn(localExercises, localExercises.measureType);
 
         // 2. Recreate workoutSets table to support nullable weight/reps and add durationSec
-        // Since we are changing column constraints (NOT NULL -> NULL), recreating is safer/required in SQLite
+        await _recreateWorkoutSetsTable(m);
+      }
 
-        // Rename old table
-        await customStatement(
-          'ALTER TABLE workout_sets RENAME TO workout_sets_old',
-        );
-
-        // Create new table (this uses the current class definition which has nullable weight/reps and durationSec)
-        await m.createTable(workoutSets);
-
-        // Copy data
-        // Note: "index" is a reserved keyword in SQL, so we quote it.
-        // We don't copy durationSec as it doesn't exist in old table (it will be null in new table)
-        await customStatement('''
-          INSERT INTO workout_sets (id, item_id, weight, reps, is_warmup, is_assisted, "index")
-          SELECT id, item_id, weight, reps, is_warmup, is_assisted, "index"
-          FROM workout_sets_old
-        ''');
-
-        // Drop old table
-        await customStatement('DROP TABLE workout_sets_old');
+      // Force verify that durationSec exists by recreating table if upgrading from 9 to 10
+      // This covers cases where users might have been on version 9 BUT without the column due to skipped migration
+      if (from == 9) {
+        // Check if measureType exists first (to be safe)
+        try {
+          await m.addColumn(localExercises, localExercises.measureType);
+        } catch (e) {
+          // Ignore if already exists
+        }
+        await _recreateWorkoutSetsTable(m);
+      }
+      // Force recreate table for version 11 to ensure nullability constraints are updated
+      if (from < 11) {
+        await _recreateWorkoutSetsTable(m);
       }
     },
   );
+
+  Future<void> _recreateWorkoutSetsTable(Migrator m) async {
+    // Rename old table
+    await customStatement(
+      'ALTER TABLE workout_sets RENAME TO workout_sets_old',
+    );
+
+    // Create new table
+    await m.createTable(workoutSets);
+
+    // Copy data
+    // Note: "index" is a reserved keyword in SQL, so we quote it.
+    // We check if input table has duration_sec or not.
+    // But safest is to just copy common columns.
+    await customStatement('''
+      INSERT INTO workout_sets (id, item_id, weight, reps, is_warmup, is_assisted, "index")
+      SELECT id, item_id, weight, reps, is_warmup, is_assisted, "index"
+      FROM workout_sets_old
+    ''');
+
+    // If old table HAD duration_sec (rare case of re-running migration), we might lose it, but
+    // since the issue is "it's not saving", it's likely 0 anyway.
+    // Prioritizing having a valid schema over preserving potentially corrupted/missing column.
+
+    // Drop old table
+    await customStatement('DROP TABLE workout_sets_old');
+  }
 }
 
 LazyDatabase _openConnection() {

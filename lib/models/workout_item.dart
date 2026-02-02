@@ -20,7 +20,10 @@ class WorkoutItem {
     required this.sets,
     this.memo = '',
     required this.order,
-  }) : id = id ?? (DateTime.now().millisecondsSinceEpoch.toString() + Random().nextInt(10000).toString());
+  }) : id =
+           id ??
+           (DateTime.now().millisecondsSinceEpoch.toString() +
+               Random().nextInt(10000).toString());
 
   factory WorkoutItem.fromMap(Map<String, dynamic> map) {
     return WorkoutItem(
@@ -29,7 +32,8 @@ class WorkoutItem {
       exerciseName: map['exerciseName'] ?? '',
       bodyPartId: map['bodyPartId'] ?? '',
       bodyPartName: map['bodyPartName'] ?? '',
-      sets: (map['sets'] as List<dynamic>?)
+      sets:
+          (map['sets'] as List<dynamic>?)
               ?.map((s) => WorkoutSet.fromMap(s as Map<String, dynamic>))
               .toList() ??
           [],
@@ -74,4 +78,8 @@ class WorkoutItem {
 
   // Calculate total volume for this exercise
   double get totalVolume => sets.fold(0.0, (sum, set) => sum + set.volume);
+
+  // Calculate total duration for this exercise
+  int get totalDuration =>
+      sets.fold(0, (sum, set) => sum + (set.durationSec ?? 0));
 }

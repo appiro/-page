@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // App Info
-  static const String appName = 'Fit App';
+  static const String appName = 'ツリトレ';
   static const String appVersion = '1.0.0';
 
   // Default Settings
@@ -22,9 +22,15 @@ class AppConstants {
   static const double minTapTargetSize = 48.0;
 
   // Colors
-  static const Color primaryColor = Color(0xFF0F172A); // Deep Navy for headers/actions
-  static const Color accentColor = Color(0xFF06B6D4); // Soft Cyan for highlights
-  static const Color backgroundColor = Color(0xFFF8FAFC); // Light Gray background
+  static const Color primaryColor = Color(
+    0xFF0F172A,
+  ); // Deep Navy for headers/actions
+  static const Color accentColor = Color(
+    0xFF06B6D4,
+  ); // Soft Cyan for highlights
+  static const Color backgroundColor = Color(
+    0xFFF8FAFC,
+  ); // Light Gray background
   static const Color surfaceColor = Colors.white; // White surfaces
   static const Color errorColor = Color(0xFFEF4444); // Less harsh red
   static const Color successColor = Color(0xFF10B981); // Less harsh green
@@ -36,6 +42,7 @@ class AppConstants {
   static const String achievementTotalCoins = 'totalCoinsEarned';
   static const String achievementMaxVolume = 'maxVolume';
   static const String achievementTotalVolume = 'totalVolume';
+  static const String achievementTotalDuration = 'totalDuration';
 
   // Firestore Collections
   static const String usersCollection = 'users';
@@ -45,10 +52,13 @@ class AppConstants {
   static const String economyDocument = 'economy';
 
   // Error Messages
-  static const String errorNetworkUnavailable = 'Network unavailable. Please check your connection.';
-  static const String errorAuthFailed = 'Authentication failed. Please try again.';
+  static const String errorNetworkUnavailable =
+      'Network unavailable. Please check your connection.';
+  static const String errorAuthFailed =
+      'Authentication failed. Please try again.';
   static const String errorGeneric = 'An error occurred. Please try again.';
-  static const String errorInsufficientCoins = 'Insufficient coins for this purchase.';
+  static const String errorInsufficientCoins =
+      'Insufficient coins for this purchase.';
 
   // Success Messages
   static const String successWorkoutSaved = 'Workout saved successfully!';

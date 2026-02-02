@@ -10,6 +10,7 @@ import '../models/user_profile.dart';
 import '../models/economy_state.dart';
 
 import '../models/body_composition_entry.dart';
+import '../models/user_inventory.dart';
 import 'fit_repository.dart';
 import 'package:uuid/uuid.dart';
 // Keep if needed, though usually for list ops
@@ -177,18 +178,19 @@ class LocalRepository implements FitRepository {
           bodyPartName: bodyPartName,
           order: itemEntity.orderIndex,
           memo: itemEntity.memo,
-          sets: sets
-              .map(
-                (s) => WorkoutSet(
-                  // WorkoutSet model does not have 'id'
-                  weight: s.weight,
-                  reps: s.reps,
-                  durationSec: s.durationSec,
-                  assisted: s.isAssisted,
-                  // isWarmup removed as it is not in WorkoutSet model
-                ),
-              )
-              .toList(),
+          sets: sets.map((s) {
+            print(
+              '   Loaded set for ${itemEntity.exerciseId}: duration=${s.durationSec}, weight=${s.weight}',
+            );
+            return WorkoutSet(
+              // WorkoutSet model does not have 'id'
+              weight: s.weight,
+              reps: s.reps,
+              durationSec: s.durationSec,
+              assisted: s.isAssisted,
+              // isWarmup removed as it is not in WorkoutSet model
+            );
+          }).toList(),
         ),
       );
     }
@@ -336,6 +338,18 @@ class LocalRepository implements FitRepository {
                   index: j,
                 ),
               );
+          print(
+            '   [SAVE_DEBUG] Saving set for exercise ${item.exerciseName}:',
+          );
+          print('      - durationSec: ${set.durationSec}');
+          print('      - weight: ${set.weight}');
+          print('      - reps: ${set.reps}');
+          print(
+            '      - DB Value will be: ${set.durationSec} (if null, check if DB accepts nulls)',
+          );
+          print(
+            '   Saved set: weight=${set.weight}, reps=${set.reps}, duration=${set.durationSec}',
+          );
         }
       }
     });
@@ -702,6 +716,9 @@ class LocalRepository implements FitRepository {
                   bodyPartId: e.bodyPartId,
                   order: e.orderIndex,
                   createdAt: e.createdAt ?? DateTime.now(),
+                  measureType: ExerciseMeasureTypeExtension.fromFirestore(
+                    e.measureType,
+                  ),
                 ),
               )
               .toList(),
@@ -720,6 +737,9 @@ class LocalRepository implements FitRepository {
       bodyPartId: entity.bodyPartId,
       order: entity.orderIndex,
       createdAt: entity.createdAt ?? DateTime.now(),
+      measureType: ExerciseMeasureTypeExtension.fromFirestore(
+        entity.measureType,
+      ),
     );
   }
 
@@ -737,14 +757,22 @@ class LocalRepository implements FitRepository {
     // final inventory = await _db.select(_db.localInventory).get();
     // final fishCollection = await _db.select(_db.localFishCollection).get();
 
-    // TEMPORARY: Calculate achievementCounts from existing workout data
+    final achievements = await _db.select(_db.localAchievements).get();
+    final inventory = await _db.select(_db.localInventory).get();
+    final fishCollection = await _db.select(_db.localFishCollection).get();
+
+    // Calculate achievementCounts from existing workout data AND DB
     final achievementCounts = <String, int>{};
+    for (var achievement in achievements) {
+      achievementCounts[achievement.achievementKey] = achievement.count;
+    }
 
     // Get all workouts to calculate stats
     final workouts = await _db.select(_db.workouts).get();
     print('📊 [LocalRepository] Found ${workouts.length} workouts in database');
     int totalWorkouts = 0;
     int totalVolume = 0;
+    int totalDuration = 0;
     int maxVolume = 0;
 
     for (var workout in workouts) {
@@ -775,13 +803,20 @@ class LocalRepository implements FitRepository {
 
           for (var set in sets) {
             if (!set.isWarmup) {
+              // Volume calculation
               int vol = 0;
               if (set.weight != null && set.reps != null) {
                 vol = (set.weight! * set.reps!).round();
               }
               workoutVolume += vol;
+
+              // Duration calculation (add set duration)
+              if (set.durationSec != null && set.durationSec! > 0) {
+                totalDuration += set.durationSec!;
+              }
+
               print(
-                '         - Set: ${set.weight}kg x ${set.reps} = $vol (Current total: $workoutVolume)',
+                '         - Set: ${set.weight}kg x ${set.reps} / ${set.durationSec}s = $vol (Current total: $workoutVolume)',
               );
             } else {
               print('         - Set: Warmup, skipped');
@@ -801,6 +836,7 @@ class LocalRepository implements FitRepository {
 
     achievementCounts['totalWorkouts'] = totalWorkouts;
     achievementCounts['totalVolume'] = totalVolume;
+    achievementCounts['totalDuration'] = totalDuration;
     achievementCounts['maxVolume'] = maxVolume;
     achievementCounts['totalCoinsEarned'] = state?.totalCoins ?? 0;
 
@@ -811,26 +847,21 @@ class LocalRepository implements FitRepository {
     print('   Max Volume: $maxVolume');
     print('   Achievement Counts: $achievementCounts');
 
-    // TODO: Uncomment after build_runner generates the new tables
-    // Convert achievements list to map
-    // final achievementCounts = <String, int>{};
-    // for (var achievement in achievements) {
-    //   achievementCounts[achievement.achievementKey] = achievement.count;
-    // }
+    final inventoryList = inventory
+        .map(
+          (inv) => UserInventory(
+            itemId: inv.itemId,
+            remainingUses: inv.remainingUses,
+            acquiredAt: inv.acquiredAt,
+            isEquipped: inv.isEquipped,
+          ),
+        )
+        .toList();
 
-    // Convert inventory entities to UserInventory models
-    // final inventoryList = inventory.map((inv) => UserInventory(
-    //   itemId: inv.itemId,
-    //   remainingUses: inv.remainingUses,
-    //   acquiredAt: inv.acquiredAt,
-    //   isEquipped: inv.isEquipped,
-    // )).toList();
-
-    // Convert fish collection to map
-    // final fishCollectionMap = <String, int>{};
-    // for (var fish in fishCollection) {
-    //   fishCollectionMap[fish.fishId] = fish.count;
-    // }
+    final fishCollectionMap = <String, int>{};
+    for (var fish in fishCollection) {
+      fishCollectionMap[fish.fishId] = fish.count;
+    }
 
     return EconomyState(
       totalCoins: state?.totalCoins ?? 0,
@@ -839,8 +870,8 @@ class LocalRepository implements FitRepository {
       unlockedTitleIds: titles.map((t) => t.titleId).toList(),
       equippedTitleId: state?.equippedTitleId,
       achievementCounts: achievementCounts,
-      inventory: [], // TODO: Use inventoryList after build_runner
-      fishCollection: {}, // TODO: Use fishCollectionMap after build_runner
+      inventory: inventoryList,
+      fishCollection: fishCollectionMap,
     );
   }
 
@@ -897,42 +928,46 @@ class LocalRepository implements FitRepository {
             );
       }
 
-      // TODO: Uncomment after build_runner generates the new tables
       // Update achievement counts
-      // for (var entry in state.achievementCounts.entries) {
-      //   await _db.into(_db.localAchievements).insertOnConflictUpdate(
-      //     LocalAchievementsCompanion(
-      //       achievementKey: Value(entry.key),
-      //       count: Value(entry.value),
-      //     ),
-      //   );
-      // }
+      for (var entry in state.achievementCounts.entries) {
+        await _db
+            .into(_db.localAchievements)
+            .insertOnConflictUpdate(
+              LocalAchievementsCompanion(
+                achievementKey: Value(entry.key),
+                count: Value(entry.value),
+              ),
+            );
+      }
 
       // Update inventory - delete all and re-insert
-      // This is simpler than trying to diff and update
-      // await _db.delete(_db.localInventory).go();
-      // for (var item in state.inventory) {
-      //   final id = _uuid.v4();
-      //   await _db.into(_db.localInventory).insert(
-      //     LocalInventoryCompanion(
-      //       id: Value(id),
-      //       itemId: Value(item.itemId),
-      //       remainingUses: Value(item.remainingUses),
-      //       acquiredAt: Value(item.acquiredAt),
-      //       isEquipped: Value(item.isEquipped),
-      //     ),
-      //   );
-      // }
+      await _db.delete(_db.localInventory).go();
+      for (var item in state.inventory) {
+        final id = _uuid.v4();
+        await _db
+            .into(_db.localInventory)
+            .insert(
+              LocalInventoryCompanion(
+                id: Value(id),
+                itemId: Value(item.itemId),
+                remainingUses: Value(item.remainingUses),
+                acquiredAt: Value(item.acquiredAt),
+                isEquipped: Value(item.isEquipped),
+              ),
+            );
+      }
 
       // Update fish collection
-      // for (var entry in state.fishCollection.entries) {
-      //   await _db.into(_db.localFishCollection).insertOnConflictUpdate(
-      //     LocalFishCollectionCompanion(
-      //       fishId: Value(entry.key),
-      //       count: Value(entry.value),
-      //     ),
-      //   );
-      // }
+      for (var entry in state.fishCollection.entries) {
+        await _db
+            .into(_db.localFishCollection)
+            .insertOnConflictUpdate(
+              LocalFishCollectionCompanion(
+                fishId: Value(entry.key),
+                count: Value(entry.value),
+              ),
+            );
+      }
     });
   }
 

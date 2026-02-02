@@ -1,4 +1,4 @@
-package com.example.fit_app
+package jp.appiro.fit_app
 
 import io.flutter.embedding.android.FlutterActivity
 

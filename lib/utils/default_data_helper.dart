@@ -143,9 +143,32 @@ class DefaultDataHelper {
     String uid,
     FitRepository repository,
   ) async {
+    // Legacy support, kept for backward compatibility
+    await fixTimeBasedExercises(uid, repository);
+  }
+
+  static Future<void> fixTimeBasedExercises(
+    String uid,
+    FitRepository repository,
+  ) async {
     try {
       final exercises = await repository.getExercisesStream(uid).first;
-      final timeBasedNames = ['プランク', 'サイドプランク', 'クランチ', 'レッグレイズ'];
+      final timeBasedNames = [
+        // Japanese
+        'プランク',
+        'サイドプランク',
+        'クランチ',
+        'レッグレイズ',
+        'Lシット',
+        'フロントブリッジ',
+        // English
+        'Plank',
+        'Side Plank',
+        'Crunch',
+        'Leg Raise',
+        'L-Sit',
+        'L-sit',
+      ];
 
       for (var exercise in exercises) {
         if (timeBasedNames.contains(exercise.name) &&
@@ -154,11 +177,11 @@ class DefaultDataHelper {
             measureType: ExerciseMeasureType.time,
           );
           await repository.updateExercise(uid, updated);
-          print('Migrated ${exercise.name} to time-based');
+          print('Fixed exercise type for ${exercise.name} to TIME');
         }
       }
     } catch (e) {
-      print('Migration failed: $e');
+      print('Fix time based exercises failed: $e');
     }
   }
 

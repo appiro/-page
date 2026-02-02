@@ -83,4 +83,8 @@ class Workout {
 
   // Get total number of sets
   int get totalSets => items.fold(0, (total, item) => total + item.sets.length);
+
+  // Calculate total duration for the entire workout
+  int get totalDuration =>
+      items.fold(0, (total, item) => total + item.totalDuration);
 }

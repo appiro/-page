@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/economy_provider.dart';
 import '../utils/constants.dart';
+import 'debug_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -102,6 +103,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report, color: Colors.grey),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const DebugScreen()));
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -212,6 +223,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _formatVol(maxVolume),
                   Icons.emoji_events,
                 ),
+                _buildStatCard(
+                  '総時間',
+                  _formatDuration(
+                    state.getAchievementCount(
+                      AppConstants.achievementTotalDuration,
+                    ),
+                  ),
+                  Icons.timer,
+                ),
               ],
             ),
           ],
@@ -220,10 +240,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  String _formatDuration(int seconds) {
+    return '$seconds秒';
+  }
+
   String _formatVol(int vol) {
-    if (vol >= 1000000) return '${(vol / 1000000).toStringAsFixed(1)}M kg';
-    if (vol >= 1000) return '${(vol / 1000).toStringAsFixed(1)}k kg';
-    return '$vol kg';
+    // Format with commas for readability (e.g. 10,000 kg)
+    final formatted = vol.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '$formatted kg';
   }
 
   Widget _buildStatCard(

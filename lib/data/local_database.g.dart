@@ -970,18 +970,29 @@ class $WorkoutSetsTable extends WorkoutSets
   late final GeneratedColumn<double> weight = GeneratedColumn<double>(
     'weight',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _repsMeta = const VerificationMeta('reps');
   @override
   late final GeneratedColumn<int> reps = GeneratedColumn<int>(
     'reps',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _durationSecMeta = const VerificationMeta(
+    'durationSec',
+  );
+  @override
+  late final GeneratedColumn<int> durationSec = GeneratedColumn<int>(
+    'duration_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _isWarmupMeta = const VerificationMeta(
     'isWarmup',
@@ -1028,6 +1039,7 @@ class $WorkoutSetsTable extends WorkoutSets
     itemId,
     weight,
     reps,
+    durationSec,
     isWarmup,
     isAssisted,
     index,
@@ -1062,16 +1074,21 @@ class $WorkoutSetsTable extends WorkoutSets
         _weightMeta,
         weight.isAcceptableOrUnknown(data['weight']!, _weightMeta),
       );
-    } else if (isInserting) {
-      context.missing(_weightMeta);
     }
     if (data.containsKey('reps')) {
       context.handle(
         _repsMeta,
         reps.isAcceptableOrUnknown(data['reps']!, _repsMeta),
       );
-    } else if (isInserting) {
-      context.missing(_repsMeta);
+    }
+    if (data.containsKey('duration_sec')) {
+      context.handle(
+        _durationSecMeta,
+        durationSec.isAcceptableOrUnknown(
+          data['duration_sec']!,
+          _durationSecMeta,
+        ),
+      );
     }
     if (data.containsKey('is_warmup')) {
       context.handle(
@@ -1113,11 +1130,15 @@ class $WorkoutSetsTable extends WorkoutSets
       weight: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}weight'],
-      )!,
+      ),
       reps: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}reps'],
-      )!,
+      ),
+      durationSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_sec'],
+      ),
       isWarmup: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_warmup'],
@@ -1171,7 +1192,7 @@ class WorkoutSetEntity extends DataClass
       map['reps'] = Variable<int>(reps);
     }
     if (!nullToAbsent || durationSec != null) {
-      map['durationSec'] = Variable<int>(durationSec);
+      map['duration_sec'] = Variable<int>(durationSec);
     }
     map['is_warmup'] = Variable<bool>(isWarmup);
     map['is_assisted'] = Variable<bool>(isAssisted);
@@ -1353,7 +1374,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
       if (itemId != null) 'item_id': itemId,
       if (weight != null) 'weight': weight,
       if (reps != null) 'reps': reps,
-      if (durationSec != null) 'durationSec': durationSec,
+      if (durationSec != null) 'duration_sec': durationSec,
       if (isWarmup != null) 'is_warmup': isWarmup,
       if (isAssisted != null) 'is_assisted': isAssisted,
       if (index != null) 'index': index,
@@ -1401,7 +1422,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetEntity> {
       map['reps'] = Variable<int>(reps.value);
     }
     if (durationSec.present) {
-      map['durationSec'] = Variable<int>(durationSec.value);
+      map['duration_sec'] = Variable<int>(durationSec.value);
     }
     if (isWarmup.present) {
       map['is_warmup'] = Variable<bool>(isWarmup.value);
@@ -2128,7 +2149,8 @@ class LocalExerciseEntity extends DataClass
           ..write('bodyPartId: $bodyPartId, ')
           ..write('orderIndex: $orderIndex, ')
           ..write('isArchived: $isArchived, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('measureType: $measureType')
           ..write(')'))
         .toString();
   }
@@ -2205,6 +2227,7 @@ class LocalExercisesCompanion extends UpdateCompanion<LocalExerciseEntity> {
       if (orderIndex != null) 'order_index': orderIndex,
       if (isArchived != null) 'is_archived': isArchived,
       if (createdAt != null) 'created_at': createdAt,
+      if (measureType != null) 'measure_type': measureType,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6192,8 +6215,9 @@ typedef $$WorkoutSetsTableCreateCompanionBuilder =
     WorkoutSetsCompanion Function({
       required String id,
       required String itemId,
-      required double weight,
-      required int reps,
+      Value<double?> weight,
+      Value<int?> reps,
+      Value<int?> durationSec,
       Value<bool> isWarmup,
       Value<bool> isAssisted,
       required int index,
@@ -6203,8 +6227,9 @@ typedef $$WorkoutSetsTableUpdateCompanionBuilder =
     WorkoutSetsCompanion Function({
       Value<String> id,
       Value<String> itemId,
-      Value<double> weight,
-      Value<int> reps,
+      Value<double?> weight,
+      Value<int?> reps,
+      Value<int?> durationSec,
       Value<bool> isWarmup,
       Value<bool> isAssisted,
       Value<int> index,
@@ -6257,6 +6282,11 @@ class $$WorkoutSetsTableFilterComposer
 
   ColumnFilters<int> get reps => $composableBuilder(
     column: $table.reps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationSec => $composableBuilder(
+    column: $table.durationSec,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6323,6 +6353,11 @@ class $$WorkoutSetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isWarmup => $composableBuilder(
     column: $table.isWarmup,
     builder: (column) => ColumnOrderings(column),
@@ -6379,6 +6414,11 @@ class $$WorkoutSetsTableAnnotationComposer
 
   GeneratedColumn<int> get reps =>
       $composableBuilder(column: $table.reps, builder: (column) => column);
+
+  GeneratedColumn<int> get durationSec => $composableBuilder(
+    column: $table.durationSec,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isWarmup =>
       $composableBuilder(column: $table.isWarmup, builder: (column) => column);
@@ -6445,8 +6485,9 @@ class $$WorkoutSetsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> itemId = const Value.absent(),
-                Value<double> weight = const Value.absent(),
-                Value<int> reps = const Value.absent(),
+                Value<double?> weight = const Value.absent(),
+                Value<int?> reps = const Value.absent(),
+                Value<int?> durationSec = const Value.absent(),
                 Value<bool> isWarmup = const Value.absent(),
                 Value<bool> isAssisted = const Value.absent(),
                 Value<int> index = const Value.absent(),
@@ -6456,6 +6497,7 @@ class $$WorkoutSetsTableTableManager
                 itemId: itemId,
                 weight: weight,
                 reps: reps,
+                durationSec: durationSec,
                 isWarmup: isWarmup,
                 isAssisted: isAssisted,
                 index: index,
@@ -6465,8 +6507,9 @@ class $$WorkoutSetsTableTableManager
               ({
                 required String id,
                 required String itemId,
-                required double weight,
-                required int reps,
+                Value<double?> weight = const Value.absent(),
+                Value<int?> reps = const Value.absent(),
+                Value<int?> durationSec = const Value.absent(),
                 Value<bool> isWarmup = const Value.absent(),
                 Value<bool> isAssisted = const Value.absent(),
                 required int index,
@@ -6474,8 +6517,9 @@ class $$WorkoutSetsTableTableManager
               }) => WorkoutSetsCompanion.insert(
                 id: id,
                 itemId: itemId,
-                weight: Value(weight),
-                reps: Value(reps),
+                weight: weight,
+                reps: reps,
+                durationSec: durationSec,
                 isWarmup: isWarmup,
                 isAssisted: isAssisted,
                 index: index,
@@ -6770,6 +6814,7 @@ typedef $$LocalExercisesTableCreateCompanionBuilder =
       required int orderIndex,
       Value<bool> isArchived,
       Value<DateTime?> createdAt,
+      Value<String> measureType,
       Value<int> rowid,
     });
 typedef $$LocalExercisesTableUpdateCompanionBuilder =
@@ -6780,6 +6825,7 @@ typedef $$LocalExercisesTableUpdateCompanionBuilder =
       Value<int> orderIndex,
       Value<bool> isArchived,
       Value<DateTime?> createdAt,
+      Value<String> measureType,
       Value<int> rowid,
     });
 
@@ -6819,6 +6865,11 @@ class $$LocalExercisesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get measureType => $composableBuilder(
+    column: $table.measureType,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6861,6 +6912,11 @@ class $$LocalExercisesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get measureType => $composableBuilder(
+    column: $table.measureType,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LocalExercisesTableAnnotationComposer
@@ -6895,6 +6951,11 @@ class $$LocalExercisesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get measureType => $composableBuilder(
+    column: $table.measureType,
+    builder: (column) => column,
+  );
 }
 
 class $$LocalExercisesTableTableManager
@@ -6940,6 +7001,7 @@ class $$LocalExercisesTableTableManager
                 Value<int> orderIndex = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 Value<DateTime?> createdAt = const Value.absent(),
+                Value<String> measureType = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LocalExercisesCompanion(
                 id: id,
@@ -6948,6 +7010,7 @@ class $$LocalExercisesTableTableManager
                 orderIndex: orderIndex,
                 isArchived: isArchived,
                 createdAt: createdAt,
+                measureType: measureType,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6958,6 +7021,7 @@ class $$LocalExercisesTableTableManager
                 required int orderIndex,
                 Value<bool> isArchived = const Value.absent(),
                 Value<DateTime?> createdAt = const Value.absent(),
+                Value<String> measureType = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LocalExercisesCompanion.insert(
                 id: id,
@@ -6966,6 +7030,7 @@ class $$LocalExercisesTableTableManager
                 orderIndex: orderIndex,
                 isArchived: isArchived,
                 createdAt: createdAt,
+                measureType: measureType,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

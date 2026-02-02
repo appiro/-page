@@ -421,6 +421,9 @@ class _WorkoutExerciseEditScreenState extends State<WorkoutExerciseEditScreen> {
                               final shouldAutoFocus =
                                   index == _newlyAddedSetIndex;
                               return SetInputRow(
+                                key: ValueKey(
+                                  _currentItem.sets[index].localId,
+                                ), // Use localId for state preservation
                                 set: _currentItem.sets[index],
                                 setNumber: index + 1,
                                 unit: unit,

@@ -86,7 +86,7 @@ class MasterProvider with ChangeNotifier {
       // Try to create default data (idempotent check inside)
       await DefaultDataHelper.createDefaultData(uid, _repository);
       // Migrate exercise measure types for existing data
-      await DefaultDataHelper.migrateMeasureTypes(uid, _repository);
+      await DefaultDataHelper.fixTimeBasedExercises(uid, _repository);
       // Ensure 'Other' body part exists
       await DefaultDataHelper.ensureOtherBodyPartExists(uid, _repository);
 
