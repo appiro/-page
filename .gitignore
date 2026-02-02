@@ -1,4 +1,6 @@
+####################################
 # Miscellaneous
+####################################
 *.class
 *.log
 *.pyc
@@ -12,39 +14,60 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+####################################
+# IntelliJ / Android Studio
+####################################
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
+####################################
+# VS Code
+####################################
+# Uncomment if you want to ignore VSCode settings
 #.vscode/
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+####################################
+# Flutter / Dart / Pub
+####################################
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
 
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+####################################
+# Android build outputs
+####################################
 /android/app/debug
 /android/app/profile
 /android/app/release
 
-# Firebase configuration files (replace dummy files with real ones)
-# Uncomment these lines when using real Firebase config:
-# android/app/google-services.json
-# ios/Runner/GoogleService-Info.plist
+####################################
+# Android signing (VERY IMPORTANT)
+####################################
+key.jks
+android/key.properties
+
+####################################
+# Firebase configuration (DO NOT COMMIT)
+####################################
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+####################################
+# Obfuscation / symbols
+####################################
+app.*.symbols
+app.*.map.json
+
+####################################
+# macOS / Windows
+####################################
+Thumbs.db
+desktop.ini
