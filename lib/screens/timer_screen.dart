@@ -294,11 +294,11 @@ class _TimerScreenState extends State<TimerScreen> {
                     // Format Label
                     String label;
                     if (time < 60) {
-                      label = '${time}秒';
+                      label = '$time秒';
                     } else {
                       final m = time ~/ 60;
                       final s = time % 60;
-                      label = s == 0 ? '${m}分' : '${m}分${s}秒';
+                      label = s == 0 ? '$m分' : '$m分$s秒';
                     }
 
                     return ChoiceChip(
@@ -320,10 +320,12 @@ class _TimerScreenState extends State<TimerScreen> {
                             // Sync controllers
                             final m = time ~/ 60;
                             final s = time % 60;
-                            if (_minScrollCtrl.hasClients)
+                            if (_minScrollCtrl.hasClients) {
                               _minScrollCtrl.jumpToItem(m);
-                            if (_secScrollCtrl.hasClients)
+                            }
+                            if (_secScrollCtrl.hasClients) {
                               _secScrollCtrl.jumpToItem((s / 5).round());
+                            }
                             _minTextCtrl.text = m.toString();
                             _secTextCtrl.text = s.toString();
                           });
@@ -427,8 +429,9 @@ class _TimerScreenState extends State<TimerScreen> {
                                 onChanged: (val) {
                                   final m = int.tryParse(val);
                                   if (m != null && m >= 0 && m < 100) {
-                                    if (_minScrollCtrl.hasClients)
+                                    if (_minScrollCtrl.hasClients) {
                                       _minScrollCtrl.jumpToItem(m);
+                                    }
                                   }
                                 },
                               ),
@@ -455,10 +458,11 @@ class _TimerScreenState extends State<TimerScreen> {
                                   // Sync picker to nearest 5 multiple
                                   if (s != null && s >= 0 && s < 60) {
                                     // Picker index = s / 5
-                                    if (_secScrollCtrl.hasClients)
+                                    if (_secScrollCtrl.hasClients) {
                                       _secScrollCtrl.jumpToItem(
                                         (s / 5).round(),
                                       );
+                                    }
                                   }
                                 },
                               ),

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/master_provider.dart';
 import '../providers/stats_provider.dart';
-import '../models/body_part.dart';
 import '../models/exercise.dart';
 import '../utils/constants.dart';
 import '../utils/date_helper.dart';
@@ -108,7 +107,7 @@ class _StatsScreenState extends State<StatsScreen> {
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                    value: _selectedBodyPartId,
+                    initialValue: _selectedBodyPartId,
                     items: bodyParts.map((bp) {
                       return DropdownMenuItem(
                         value: bp.id,
@@ -124,14 +123,14 @@ class _StatsScreenState extends State<StatsScreen> {
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                    value: _selectedExerciseId,
+                    initialValue: _selectedExerciseId,
                     items: exercises.map((e) {
                       return DropdownMenuItem(
                         value: e.id,
                         child: Text(e.name),
                       );
                     }).toList(),
-                    onChanged: _onBodyPartChanged != null ? _onExerciseChanged : null,
+                    onChanged: _onExerciseChanged,
                   ),
                 ],
               ),

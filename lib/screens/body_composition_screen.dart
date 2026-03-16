@@ -552,7 +552,7 @@ class _InputFormState extends State<_InputForm> {
 
   @override
   Widget build(BuildContext context) {
-    print('_InputForm build: _todayEntry=${_todayEntry}, isEditing=$_isEditing');
+    print('_InputForm build: _todayEntry=$_todayEntry, isEditing=$_isEditing');
     if (_todayEntry == null) {
       return const Center(child: CircularProgressIndicator());
     }

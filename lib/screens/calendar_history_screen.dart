@@ -5,7 +5,6 @@ import '../providers/workout_provider.dart';
 import '../providers/master_provider.dart';
 import '../utils/constants.dart';
 import '../utils/date_helper.dart';
-import '../models/workout.dart';
 import 'workout_exercise_list_screen.dart';
 
 class CalendarHistoryScreen extends StatefulWidget {

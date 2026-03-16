@@ -163,7 +163,7 @@ class FishCollectionScreen extends StatelessWidget {
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
-                                              '${count}匹',
+                                              '$count匹',
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 color: Colors.blue[800],

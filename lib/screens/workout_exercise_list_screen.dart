@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../models/workout.dart';
 import '../models/workout_item.dart';
 import '../models/exercise.dart';
@@ -27,6 +28,8 @@ class _WorkoutExerciseListScreenState extends State<WorkoutExerciseListScreen> {
   late Workout _currentWorkout;
   int _initialUniqueCount = 0;
   bool _canPop = false;
+  final GlobalKey _addButtonKey = GlobalKey();
+  TutorialCoachMark? _tutorialCoachMark;
 
   @override
   void initState() {
@@ -40,6 +43,83 @@ class _WorkoutExerciseListScreenState extends State<WorkoutExerciseListScreen> {
     _initialUniqueCount = uniqueExercises.length;
 
     _refreshWorkout();
+
+    // Show coachmark for first-time users
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final economyProvider = context.read<EconomyProvider>();
+      final profile = economyProvider.userProfile;
+      if (profile != null && !profile.seenTutorials.contains('workout_guide')) {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) _showAddButtonCoachMark();
+        });
+      }
+    });
+  }
+
+  void _showAddButtonCoachMark() {
+    _tutorialCoachMark = TutorialCoachMark(
+      targets: [
+        TargetFocus(
+          identify: 'add_button',
+          keyTarget: _addButtonKey,
+          alignSkip: Alignment.topRight,
+          contents: [
+            TargetContent(
+              align: ContentAlign.top,
+              builder: (context, controller) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.add_circle, color: Colors.white, size: 28),
+                          SizedBox(width: 8),
+                          Text(
+                            '種目を追加しよう',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '「種目追加」をタップして\nベンチプレスやスクワットなど\n好きな種目を選んでください。',
+                        style: TextStyle(color: Colors.white, fontSize: 15),
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton(
+                        onPressed: () {
+                          controller.next();
+                          context.read<EconomyProvider>().markTutorialAsSeen(
+                            'workout_guide',
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('わかった！'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      colorShadow: AppConstants.primaryColor.withOpacity(0.85),
+      paddingFocus: 10,
+      opacityShadow: 0.85,
+    );
+    _tutorialCoachMark!.show(context: context);
   }
 
   Future<void> _refreshWorkout() async {
@@ -203,7 +283,7 @@ class _WorkoutExerciseListScreenState extends State<WorkoutExerciseListScreen> {
         }
 
         if (awardedTickets > 0) {
-          message += '\n釣りチケットを${awardedTickets}枚獲得しました!';
+          message += '\n釣りチケットを$awardedTickets枚獲得しました!';
         }
 
         await showDialog(
@@ -379,6 +459,7 @@ class _WorkoutExerciseListScreenState extends State<WorkoutExerciseListScreen> {
                     // Add Exercise Button
                     Expanded(
                       child: OutlinedButton.icon(
+                        key: _addButtonKey,
                         onPressed: _addExercise,
                         icon: const Icon(Icons.add),
                         label: const Text('種目追加'),

@@ -66,7 +66,7 @@ class LastRecordDisplay extends StatelessWidget {
 
               String labelText;
               if (duration != null && duration > 0) {
-                labelText = '${duration}秒${assisted ? ' (A)' : ''}';
+                labelText = '$duration秒${assisted ? ' (A)' : ''}';
               } else {
                 final w = (weight ?? 0).toDouble();
                 final r = reps ?? 0;

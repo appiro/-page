@@ -16,7 +16,6 @@ import 'providers/master_provider.dart';
 import 'providers/economy_provider.dart';
 import 'providers/stats_provider.dart';
 import 'providers/favorite_exercise_provider.dart';
-import 'screens/home_screen.dart';
 import 'utils/constants.dart';
 import 'data/local_database.dart';
 import 'repositories/fit_repository.dart';

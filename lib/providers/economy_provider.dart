@@ -10,7 +10,6 @@ import '../services/economy_service.dart';
 import '../services/fishing_service.dart';
 import '../services/fishing_shop_service.dart';
 import '../models/fish.dart';
-import '../models/fish.dart';
 import '../models/workout.dart';
 import '../utils/date_helper.dart';
 import '../utils/constants.dart';

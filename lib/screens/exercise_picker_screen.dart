@@ -46,7 +46,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedBodyPartId,
+                initialValue: selectedBodyPartId,
                 decoration: const InputDecoration(
                   labelText: '種類',
                   border: OutlineInputBorder(),
@@ -62,7 +62,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<ExerciseMeasureType>(
-                value: selectedMeasureType,
+                initialValue: selectedMeasureType,
                 decoration: const InputDecoration(
                   labelText: '計測タイプ',
                   border: OutlineInputBorder(),
@@ -196,7 +196,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: selectedBodyPartId,
+                  initialValue: selectedBodyPartId,
                   decoration: const InputDecoration(
                     labelText: '種類',
                     border: OutlineInputBorder(),
@@ -214,7 +214,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<ExerciseMeasureType>(
-                  value: selectedMeasureType,
+                  initialValue: selectedMeasureType,
                   decoration: const InputDecoration(
                     labelText: '計測タイプ',
                     border: OutlineInputBorder(),

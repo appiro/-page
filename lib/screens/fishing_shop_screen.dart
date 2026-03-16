@@ -149,7 +149,7 @@ class FishingShopScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        item.durability > 0 ? '所持: ${ownedCount}回分' : '購入済み',
+                        item.durability > 0 ? '所持: $ownedCount回分' : '購入済み',
                         style: TextStyle(fontSize: 10, color: Colors.green.shade800),
                       ),
                     ),

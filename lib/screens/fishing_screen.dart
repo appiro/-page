@@ -7,11 +7,9 @@ import '../utils/constants.dart';
 import 'fish_collection_screen.dart';
 import '../models/fishing_item.dart';
 import '../models/user_inventory.dart';
-import '../models/fishing_item.dart';
-import '../models/user_inventory.dart';
 import 'fishing_shop_screen.dart';
 import 'dart:math';
-import 'package:flutter/services.dart'; // For HapticFeedback
+// For HapticFeedback
 
 enum FishingAtmosphere { normal, sunset, night }
 
@@ -60,7 +58,7 @@ class _FishingScreenState extends State<FishingScreen>
   late AnimationController _swimController; // For Fish Shadow approaching
 
   // Animation State
-  double _floatOffset = 0.0;
+  final double _floatOffset = 0.0;
   bool _showFloat = false;
   double _baseScale = 1.0; // Progressive zoom level
   Set<String> _preCastFishIds = {}; // Snapshot for "NEW" badge
@@ -1297,8 +1295,9 @@ class InventorySheet extends StatelessWidget {
         if (item.type == FishingItemType.rod) include = true;
       } else {
         if (item.type != FishingItemType.rod &&
-            item.type != FishingItemType.ticket)
+            item.type != FishingItemType.ticket) {
           include = true;
+        }
       }
 
       if (include) {

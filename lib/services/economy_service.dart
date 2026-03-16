@@ -258,8 +258,9 @@ class EconomyService {
           case 'not_mikkabouzu':
             if (currentStreak != null) {
               shouldUnlock = currentStreak >= 1;
-              if (!shouldUnlock)
+              if (!shouldUnlock) {
                 print('   ❌ ${title.id}: streak $currentStreak < 1');
+              }
             } else {
               print('   ⚠️ ${title.id}: streak parameter is null');
             }
@@ -267,8 +268,9 @@ class EconomyService {
           case 'consistency_power':
             if (currentStreak != null) {
               shouldUnlock = currentStreak >= 3;
-              if (!shouldUnlock)
+              if (!shouldUnlock) {
                 print('   ❌ ${title.id}: streak $currentStreak < 3');
+              }
             } else {
               print('   ⚠️ ${title.id}: streak parameter is null');
             }
@@ -276,8 +278,9 @@ class EconomyService {
           case 'life_part':
             if (currentStreak != null) {
               shouldUnlock = currentStreak >= 6;
-              if (!shouldUnlock)
+              if (!shouldUnlock) {
                 print('   ❌ ${title.id}: streak $currentStreak < 6');
+              }
             } else {
               print('   ⚠️ ${title.id}: streak parameter is null');
             }
@@ -285,8 +288,9 @@ class EconomyService {
           case 'iron_man_streak':
             if (currentStreak != null) {
               shouldUnlock = currentStreak >= 12;
-              if (!shouldUnlock)
+              if (!shouldUnlock) {
                 print('   ❌ ${title.id}: streak $currentStreak < 12');
+              }
             } else {
               print('   ⚠️ ${title.id}: streak parameter is null');
             }
@@ -321,16 +325,18 @@ class EconomyService {
               AppConstants.achievementTotalVolume,
             );
             shouldUnlock = vol >= 1000000;
-            if (!shouldUnlock)
+            if (!shouldUnlock) {
               print('   ❌ ${title.id}: totalVol $vol < 1000000');
+            }
             break;
           case 'load_10_ton':
             final vol = economyState.getAchievementCount(
               AppConstants.achievementTotalVolume,
             );
             shouldUnlock = vol >= 10000000;
-            if (!shouldUnlock)
+            if (!shouldUnlock) {
               print('   ❌ ${title.id}: totalVol $vol < 10000000');
+            }
             break;
 
           // --- Total Duration ---
@@ -339,32 +345,36 @@ class EconomyService {
               AppConstants.achievementTotalDuration,
             );
             shouldUnlock = duration >= 3600;
-            if (!shouldUnlock)
+            if (!shouldUnlock) {
               print('   ❌ ${title.id}: duration $duration < 3600');
+            }
             break;
           case '10_hours_training':
             final duration = economyState.getAchievementCount(
               AppConstants.achievementTotalDuration,
             );
             shouldUnlock = duration >= 36000;
-            if (!shouldUnlock)
+            if (!shouldUnlock) {
               print('   ❌ ${title.id}: duration $duration < 36000');
+            }
             break;
           case '24_hours_training':
             final duration = economyState.getAchievementCount(
               AppConstants.achievementTotalDuration,
             );
             shouldUnlock = duration >= 86400;
-            if (!shouldUnlock)
+            if (!shouldUnlock) {
               print('   ❌ ${title.id}: duration $duration < 86400');
+            }
             break;
           case '100_hours_training':
             final duration = economyState.getAchievementCount(
               AppConstants.achievementTotalDuration,
             );
             shouldUnlock = duration >= 360000;
-            if (!shouldUnlock)
+            if (!shouldUnlock) {
               print('   ❌ ${title.id}: duration $duration < 360000');
+            }
             break;
 
           // --- Coins ---

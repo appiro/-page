@@ -207,7 +207,7 @@ class LocalUserProfiles extends Table {
 )
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase() : super(_openConnection());
-  LocalDatabase.forTesting(QueryExecutor e) : super(e);
+  LocalDatabase.forTesting(super.e);
 
   @override
   int get schemaVersion => 11;

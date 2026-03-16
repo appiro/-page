@@ -97,7 +97,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       print("Migration Error: $e");
       // Don't fail the login, just log error
-      throw e; // Re-throw to handle in caller if needed
+      rethrow; // Re-throw to handle in caller if needed
     }
   }
 

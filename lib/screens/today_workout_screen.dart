@@ -158,7 +158,7 @@ class _TodayWorkoutScreenState extends State<TodayWorkoutScreen> {
         }
 
         if (awardedTickets > 0) {
-          message += '\n釣りチケットを${awardedTickets}枚獲得しました!';
+          message += '\n釣りチケットを$awardedTickets枚獲得しました!';
         } else if (awardedTickets == 0 && wasCoinGranted) {
           message = '追加の記録を保存しました!';
         }
@@ -457,7 +457,7 @@ class _TodayWorkoutScreenState extends State<TodayWorkoutScreen> {
                             context,
                             icon: Icons.monitor_weight,
                             label: 'ボリューム',
-                            value: '${totalVolume.toStringAsFixed(0)}',
+                            value: totalVolume.toStringAsFixed(0),
                             unit: 'kg',
                           ),
                         ],

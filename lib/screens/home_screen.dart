@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../providers/economy_provider.dart';
 import '../providers/workout_provider.dart';
 import '../utils/date_helper.dart';
@@ -33,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _checkedTutorial = false;
   final Map<String, bool> _workoutDays = {};
   DateTime? _lastSnackbarTime; // Added for throttling
+  final GlobalKey _workoutCardKey = GlobalKey();
+  TutorialCoachMark? _tutorialCoachMark;
 
   @override
   void initState() {
@@ -122,23 +125,28 @@ class _HomeScreenState extends State<HomeScreen> {
             final pages = [
               {
                 'title': 'ようこそ！',
+                'icon': Icons.waving_hand,
+                'text': 'ツリトレへようこそ！\n筋トレを継続して釣りマスターを目指す、\n新感覚のフィットネスアプリです。',
+              },
+              {
+                'title': '1. ワークアウトの開始',
                 'icon': Icons.fitness_center,
-                'text': 'ツリトレへようこそ！\n毎日のトレーニングを楽しく記録しましょう。',
+                'text': '画面中央の「今日のワークアウト」を\nタップして記録を始めましょう。\n好きな種目とセットを追加できます。',
               },
               {
-                'title': 'ワークアウト記録',
-                'icon': Icons.add_circle,
-                'text': '画面下の「＋」ボタンから\n自分だけのメニューを作成して\nトレーニングを開始できます。',
-              },
-              {
-                'title': 'コインと称号',
+                'title': '2. 完了して報酬ゲット',
                 'icon': Icons.monetization_on,
-                'text': 'トレーニング完了でコインをゲット！\nコインでアイテムを買ったり、\n特別な「称号」を集められます。',
+                'text': 'トレーニングが終わったら\n「保存して完了」を押してください。\nご褒美のコインを獲得できます！',
               },
               {
-                'title': '釣り機能',
+                'title': '3. 釣りで息抜き',
                 'icon': Icons.directions_boat,
-                'text': '息抜きに「釣り」も楽しめます。\nレアな魚をコンプリートしましょう！',
+                'text': '下の「釣り」タブでコインを使って\n魚を釣り、図鑑を埋めましょう。\n実績で特別な「称号」も狙えます。',
+              },
+              {
+                'title': '4. 履歴と統計の確認',
+                'icon': Icons.bar_chart,
+                'text': '下の「統計」タブや\nホーム画面の「履歴」から\nこれまでの頑張りを振り返りましょう。',
               },
             ];
             final page = pages[pageIndex];
@@ -162,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               content: SizedBox(
-                height: 120,
+                height: 180,
                 child: Column(
                   children: [
                     Text(
@@ -207,6 +215,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       provider.markTutorialAsSeen('home');
                       Navigator.pop(context);
+                      // After dialog closes, show coachmark on the workout card
+                      Future.delayed(const Duration(milliseconds: 400), () {
+                        if (mounted) _showCoachMark();
+                      });
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppConstants.primaryColor,
@@ -219,6 +231,66 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+  void _showCoachMark() {
+    _tutorialCoachMark = TutorialCoachMark(
+      targets: [
+        TargetFocus(
+          identify: 'workout_card',
+          keyTarget: _workoutCardKey,
+          alignSkip: Alignment.topRight,
+          contents: [
+            TargetContent(
+              align: ContentAlign.top,
+              builder: (context, controller) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.touch_app, color: Colors.white, size: 28),
+                          SizedBox(width: 8),
+                          Text(
+                            'まずここをタップ！',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '「今日のワークアウト」をタップして、\n最初の種目を追加してみましょう。',
+                        style: TextStyle(color: Colors.white, fontSize: 15),
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton(
+                        onPressed: () => controller.next(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('わかった！'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      colorShadow: AppConstants.primaryColor.withOpacity(0.85),
+      paddingFocus: 8,
+      opacityShadow: 0.85,
+    );
+    _tutorialCoachMark!.show(context: context);
   }
 
   Future<void> _startTodayWorkout() async {
@@ -272,10 +344,6 @@ class _HomeScreenState extends State<HomeScreen> {
         economyProvider.userProfile != null) {
       if (!economyProvider.userProfile!.seenTutorials.contains('home')) {
         _checkedTutorial = true;
-
-        // Use Future.delayed to ensure context is ready and frame is done,
-        // avoiding "setState() or markNeedsBuild() called during build" errors strictly.
-        // Also helps with initial rendering glitches.
         Future.delayed(Duration.zero, () {
           if (mounted) _showTutorialDialog(context, economyProvider);
         });
@@ -381,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 24),
 
                       // Today's Workout Card
-                      const _TodayWorkoutCard(),
+                      _TodayWorkoutCard(cardKey: _workoutCardKey),
                       const SizedBox(height: 16),
 
                       // Weekly Goal Card
@@ -590,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> {
 // Extracted Widgets for Performance
 
 class _ConsecutiveWeeksHeader extends StatefulWidget {
-  const _ConsecutiveWeeksHeader({super.key});
+  const _ConsecutiveWeeksHeader();
 
   @override
   State<_ConsecutiveWeeksHeader> createState() =>
@@ -1014,7 +1082,8 @@ class _ConsecutiveWeeksHeaderState extends State<_ConsecutiveWeeksHeader>
 }
 
 class _TodayWorkoutCard extends StatelessWidget {
-  const _TodayWorkoutCard();
+  final GlobalKey? cardKey;
+  const _TodayWorkoutCard({this.cardKey});
 
   Future<void> _startTodayWorkout(BuildContext context) async {
     final workoutProvider = context.read<WorkoutProvider>();
@@ -1065,6 +1134,7 @@ class _TodayWorkoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      key: cardKey,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
